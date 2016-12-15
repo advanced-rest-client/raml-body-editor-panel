@@ -1,0 +1,375 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../paper-tabs/paper-tab.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../code-mirror/code-mirror.html">
+<link rel="import" href="../vertical-tabs/vertical-tabs.html">
+<link rel="import" href="../body-json-editor/body-json-editor.html">
+<link rel="import" href="../body-form-editor/body-form-editor.html">
+<link rel="import" href="cm-arc-styles.html">
+<!--
+`<raml-body-editor-panel>` A body editor panel containin JSON, XML and form editors.
+
+It is meant to work with the RAML spec. However without it, it will work as a CodeMirror editor.
+
+### Example
+```
+<raml-body-editor-panel></raml-body-editor-panel>
+```
+
+### Styling
+`<raml-body-editor-panel>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--raml-body-editor-panel` | Mixin applied to the element | `{}`
+
+Use `paper-tabs` and `code-mirror` variables to style this elements.
+
+@group RAML Elements
+@element raml-body-editor-panel
+@demo demo/index.html
+-->
+<dom-module id="raml-body-editor-panel">
+  <template>
+    <style>
+     :host {
+      display: block;
+
+      @apply(--raml-body-editor-panel);
+
+      --code-mirror-wrapper: {
+        display: block;
+        height: 100%;
+      };
+
+      --code-mirror-editor: {
+        z-index: 0;
+        display: block;
+      }
+
+      --paper-tabs-content: {
+        overflow: auto;
+      }
+    }
+    </style>
+    <vertical-tabs selected="{{selected}}">
+      <paper-tab hidden$="[[!isJson]]">JSON</paper-tab>
+      <!-- <paper-tab hidden$="[[!isXml]]">XML</paper-tab> -->
+      <paper-tab hidden$="[[!isForm]]">Form</paper-tab>
+      <paper-tab>Raw data</paper-tab>
+      <iron-pages content selected="{{selected}}" on-iron-select="_tabChangedHandler">
+        <body-json-editor value="{{value}}" type="[[selectedType]]" opened="[[_computeEditorOpened(selected, 0)]]" hidden$="[[!isJson]]"></body-json-editor>
+        <!-- <body-xml-editor value="{{value}}" type="[[selectedType]]" opened="[[_computeEditorOpened(selected, 1)]]" hidden$="[[!isXml]]">XML</body-xml-editor> -->
+        <body-form-editor value="{{value}}" type="[[selectedType]]" opened="[[_computeEditorOpened(selected, 2)]]" hidden$="[[!isForm]]"></body-form-editor>
+        <div class="cm-tab-editor">
+          <template is="dom-if" if="[[_computeHasMany(mimeTypes)]]">
+            <paper-dropdown-menu label="Select content type">
+              <paper-listbox class="dropdown-content" on-iron-select="_cmMimeChanged">
+                <template is="dom-repeat" items="[[mimeTypes]]">
+                  <paper-item data-mime$="[[item]]">[[item]]</paper-item>
+                </template>
+              </paper-listbox>
+            </paper-dropdown-menu>
+          </template>
+          <code-mirror opened="[[_computeEditorOpened(selected, 3)]]" mode="[[cmMode]]" value="{{value}}" theme="cm-arc"></code-mirror>
+        </div>
+      </iron-pages>
+    </vertical-tabs>
+  </template>
+  <script>
+  Polymer({
+    is: 'raml-body-editor-panel',
+    /**
+     * Fires when the value change.
+     *
+     * @event body-value-changed
+     * @param {String} value Current editor value
+     */
+    properties: {
+      // Selected tab.
+      selected: {
+        type: Number,
+        value: 0
+      },
+      // Sets and gets the editor value.
+      value: {
+        type: String,
+        value: '{\n\t\n}',
+        notify: true
+      },
+      // Code mirror mode. See `<code-mirror>` docs for more information.
+      // This is computed from the content type property.
+      cmMode: {
+        type: String,
+        value: 'application/json',
+        computed: '_computeCmMode(contentType)'
+      },
+      /**
+       * When set it will attempt to run associated code mirror mode.
+       * This element listens for the `content-type-changed` event and when
+       * handled it will automatically update content type and `mode`.
+       * If this value is set than it will override code-mirror `mode`
+       * until this value change.
+       *
+       * Also, this property notifies parent element about the change. It may be changed by the
+       * element when the user start filling the body panel for particular content type and
+       * the type is not the once that is set.
+       * The use case is when a RAML method has more than one body defined (xml and json for
+       * example) and the default is JSON but the user switch to the xml form and start filling it.
+       * Then the content type must be changed to `application/xml`. The `content-type-changed`
+       * will be fired as well in this case.
+       */
+      contentType: {
+        type: String,
+        notify: true
+      },
+      /**
+       * Body definition from the RAML file.
+       * It should be array of the body types.
+       * It expects to have expanded types (so there's no sub-types). This can be done by using
+       * the `<raml-js-parser>` element which expands the types definition.
+       *
+       * When set then the editor will show only forms for correstponding types that are available
+       * for the method.
+       */
+      body: {
+        type: Array,
+        observer: '_bodyChanged'
+      },
+      /**
+       * The mime types found in the `body` array.
+       */
+      mimeTypes: {
+        type: Array,
+        readOnly: true,
+        observer: '_mimeTypesChanged'
+      },
+      // True if this method can have the XML editor
+      isXml: {
+        type: Boolean,
+        readOnly: true,
+        value: false
+      },
+      // True if this method can have the Form editor
+      isForm: {
+        type: Boolean,
+        readOnly: true,
+        value: false
+      },
+      // True if this method can have the JSON editor
+      isJson: {
+        type: Boolean,
+        readOnly: true,
+        value: false
+      },
+      /**
+       * A RAML's type definition
+       * A JSON editor uses it to create a schema definition (as a JSON object of {name: type}) to
+       * display autosuggestions.
+       */
+      selectedType: {
+        type: Object,
+        computed: '_computeSelectedType(contentType, body)'
+      }
+    },
+
+    observers: [
+      '_valueChanged(value)'
+    ],
+
+    attached: function() {
+      this.listen(window, 'content-type-changed', '_ctHandler');
+    },
+
+    detached: function() {
+      this.unlisten(window, 'content-type-changed', '_ctHandler');
+    },
+
+    ready: function() {
+      this._isReady = true;
+    },
+
+    // Refreshes the code mirror editor when its tab is displayed.
+    _tabChangedHandler: function(e) {
+      if (!this._isReady) {
+        return;
+      }
+      if (!e.detail.item || !e.detail.item.classList) {
+        return;
+      }
+      if (e.detail.item.classList.contains('cm-tab-editor')) {
+        this.$$('code-mirror').editor.refresh();
+      } else {
+        var name = e.detail.item.nodeName.toLowerCase();
+        // TODO: it should check the type definition first for correct mime types.
+        var _contentType;
+        if (name === 'body-json-editor') {
+          if (this.contentType !== 'application/json') {
+            _contentType = 'application/json';
+          }
+        } else if (name === 'body-xml-editor') {
+          if (this.contentType !== 'application/xml') {
+            _contentType = 'application/xml';
+          }
+        } else if (name === 'body-form-editor') {
+          if (this.contentType !== 'application/x-www-form-urlencoded') {
+            _contentType = 'application/x-www-form-urlencoded';
+          }
+        }
+        // this.set('contentType', 'application/json');
+        if (_contentType) {
+          this.fire('content-type-changed', {
+            value: _contentType
+          });
+        }
+      }
+    },
+    // Handler for content type changed event.
+    _ctHandler: function(e, detail) {
+      if (!detail || !detail.value) {
+        return;
+      }
+      this.set('contentType', detail.value);
+    },
+    // Computes to CodeMirror mode based on the content type.
+    _computeCmMode: function(contentType) {
+      return contentType;
+    },
+    // Fires the `body-value-changed` event when the value has changed.
+    _valueChanged: function(value) {
+      this.fire('body-value-changed', {
+        value: value
+      });
+    },
+    // Cleaning of the variables when the body change
+    _cleanBodySettings: function() {
+      this._setMimeTypes(undefined);
+      this._setIsXml(false);
+      this._setIsJson(false);
+      this._setIsForm(false);
+    },
+    /**
+     * Called when `body` array change to set up the `mimeTypes` array.
+     */
+    _bodyChanged: function(body) {
+      this._cleanBodySettings();
+      if (!body || !(body instanceof Array)) {
+        return;
+      }
+      var mimes = body.map(function(item) {
+        return item.key;
+      });
+      this._setMimeTypes(mimes);
+      if (mimes && mimes.length) {
+        this.fire('content-type-changed', {
+          value: mimes[0]
+        });
+        if (!this._isReady) {
+          this.mime = mimes[0];
+        }
+      }
+    },
+    /**
+     * Chandler to the `mimeTypes` array change.
+     * It will display / hide editors depending on the mime types defined in the RAML definiotion.
+     * By default only CodeMirror editor is visible. Other editors depends on the spec.
+     */
+    _mimeTypesChanged: function(mimes) {
+      if (!mimes) {
+        return;
+      }
+
+      var isXml = false;
+      var isForm = false;
+      var isJson = false;
+
+      for (var i = 0, len = mimes.length; i < len; i++) {
+        if (!isJson && mimes[i].indexOf('json') !== -1) {
+          isJson = true;
+        } else if (!isXml && mimes[i].indexOf('xml') !== -1) {
+          isXml = true;
+        } else if (!isForm && mimes[i].indexOf('x-www-form-urlencoded') !== -1) {
+          isForm = true;
+        }
+      }
+      this._setIsXml(isXml);
+      this._setIsJson(isJson);
+      this._setIsForm(isForm);
+
+      if (mimes[0] !== this.contentType) {
+        this._selectMimeType(mimes[0]);
+      }
+      this.$$('vertical-tabs').notifyResize();
+    },
+    // Computes if given argument is an array and has more than one item.
+    _computeHasMany: function(arr) {
+      return (arr && arr instanceof Array) ? arr.length > 1 : false;
+    },
+    // Handler for the dropdown selection in the code mirror tab
+    _cmMimeChanged: function(e) {
+      var mime = e.detail.item.dataset.mime;
+      if (!mime) {
+        return;
+      }
+      this._selectMimeType(mime);
+    },
+    // Sets given `mime` type as a current content type value.
+    _selectMimeType: function(mime) {
+      // this.set('contentType', mime);
+      this.fire('content-type-changed', {
+        value: mime
+      });
+    },
+    // Computes if the editor is selected editor in the view
+    _computeEditorOpened: function(selected, index) {
+      return selected === index;
+    },
+    /**
+     * Computes the `selectedType` property that is passed to the editors.
+     * Editors uses it to display autocomplete feature.
+     */
+    _computeSelectedType: function(mimeType, body) {
+      if (!mimeType || !body || !body.length) {
+        return;
+      }
+      return this._getBodyForMime(mimeType, body);
+    },
+    /**
+     * Returns a body definition object for given `mime`.
+     *
+     * @param {String} mime The mime type of the body.
+     * @param {Array?} body The list of body definition. If not set then `this.body` will be used
+     * @param {Object|undefined} A body definition or undefined if not found.
+     */
+    _getBodyForMime: function(mime, body) {
+      body = body || this.body;
+      if (!mime || !body || !body.length) {
+        return;
+      }
+      for (var i = 0, len = body.length; i < len; i++) {
+        if (body[i].key === mime) {
+          return body[i];
+        }
+      }
+    }
+  });
+  </script>
+</dom-module>
