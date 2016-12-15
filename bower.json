@@ -6,11 +6,14 @@
   ],
   "keywords": [
     "web-components",
-    "polymer"
+    "polymer",
+    "raml",
+    "request",
+    "form"
   ],
   "private": true,
   "main": [
-    "body-editor-panel.html"
+    "raml-body-editor-panel.html"
   ],
   "repository": {
     "type": "git",
