@@ -62,9 +62,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <h1>The raml-body-editor-panel element</h1>
       <div main>
         <template is="dom-if" if="[[isMethod]]">
-          <raml-body-editor-panel value="{{body}}" body="[[selected.body]]"></raml-body-editor-panel>
+          <raml-body-editor-panel value="{{body}}" body="[[selected.body]]" content-type="{{contentType}}"></raml-body-editor-panel>
           <h4>Produced output</h4>
           <output>{{body}}</output>
+          <h4>Content type</h4>
+          <output>[[contentType]]</output>
         </template>
         <p hidden$="[[isMethod]]">Select a method</p>
       </div>
