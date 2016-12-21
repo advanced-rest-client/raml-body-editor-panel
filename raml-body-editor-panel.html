@@ -55,16 +55,6 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
 
       @apply(--raml-body-editor-panel);
 
-      --code-mirror-wrapper: {
-        display: block;
-        height: 100%;
-      };
-
-      --code-mirror-editor: {
-        z-index: 0;
-        display: block;
-      }
-
       --paper-tabs-content: {
         overflow: auto;
       }
@@ -75,10 +65,10 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       <!-- <paper-tab  data-editor="xml" hidden$="[[!isXml]]">XML</paper-tab> -->
       <paper-tab data-editor="form"  hidden$="[[!isForm]]">Form</paper-tab>
       <paper-tab data-editor="code-mirror" >Raw data</paper-tab>
-      <iron-pages data-editor="code-mirror"  content selected="{{selected}}" attr-for-selected="data-editor">
-        <body-json-editor data-editor="json" narrow="[[narrow]]" value="{{_valueJson}}" type="[[selectedType]]" opened="[[_computeEditorOpened(selected, 0)]]" hidden$="[[!isJson]]"></body-json-editor>
-        <!-- <body-xml-editor data-editor="xml"  value="{{_valueXml}}" type="[[selectedType]]" opened="[[_computeEditorOpened(selected, 1)]]" hidden$="[[!isXml]]">XML</body-xml-editor> -->
-        <body-form-editor data-editor="form"  value="{{_valueForm}}" type="[[selectedType]]" opened="[[_computeEditorOpened(selected, 2)]]" hidden$="[[!isForm]]"></body-form-editor>
+      <iron-pages data-editor="code-mirror" content selected="{{selected}}" attr-for-selected="data-editor">
+        <body-json-editor data-editor="json" narrow="[[narrow]]" value="{{_valueJson}}" type="[[selectedType]]" opened="[[_computeEditorOpened(selected, 'json')]]" hidden$="[[!isJson]]"></body-json-editor>
+        <!-- <body-xml-editor data-editor="xml"  value="{{_valueXml}}" type="[[selectedType]]" opened="[[_computeEditorOpened(selected, 'xml')]]" hidden$="[[!isXml]]">XML</body-xml-editor> -->
+        <body-form-editor data-editor="form"  value="{{_valueForm}}" type="[[selectedType]]" opened="[[_computeEditorOpened(selected, 'form')]]" hidden$="[[!isForm]]"></body-form-editor>
         <div class="cm-tab-editor" data-editor="code-mirror" >
           <template is="dom-if" if="[[_computeHasMany(mimeTypes)]]">
             <paper-dropdown-menu label="Select content type">
@@ -89,7 +79,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
               </paper-listbox>
             </paper-dropdown-menu>
           </template>
-          <code-mirror opened="[[_computeEditorOpened(selected, 3)]]" mode="[[cmMode]]" value="{{_valueCodeMirror}}" theme="cm-arc"></code-mirror>
+          <code-mirror opened="[[_computeEditorOpened(selected, 'code-mirror')]]" mode="[[cmMode]]" value="{{_valueCodeMirror}}" theme="cm-arc"></code-mirror>
         </div>
       </iron-pages>
     </vertical-tabs>
@@ -464,6 +454,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     },
     // Computes if the editor is selected editor in the view
     _computeEditorOpened: function(selected, index) {
+      console.log('_computeEditorOpened', selected, index);
       return selected === index;
     },
     /**
