@@ -1,3 +1,17 @@
+<a name="0.1.2"></a>
+## [0.1.2](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.1.1...v0.1.2) (2016-12-21)
+
+
+### Fix
+
+* Fixed issue with ther >>opened<< computation after iron-pages selection attribute change ([6688d7075b4e5938443a88f711e5c3b9e3fdcc70](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/6688d7075b4e5938443a88f711e5c3b9e3fdcc70))
+
+### Update
+
+* Added variables to the main theme ([072c44014f171c984dd8f0ab173dae100198c762](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/072c44014f171c984dd8f0ab173dae100198c762))
+
+
+
 <a name="0.1.1"></a>
 ## 0.1.1 (2016-12-15)
 
