@@ -108,7 +108,6 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     </div>
     <iron-pages selected="{{selected}}" attr-for-selected="data-editor" selected-attribute="opened">
       <div class="cm-tab-editor" data-editor="code-mirror">
-        <p>cmMode: [[cmMode]]</p>
         <code-mirror opened mode="[[cmMode]]" value="{{_valueCodeMirror}}" theme="cm-arc"></code-mirror>
       </div>
       <body-json-editor data-editor="json" narrow="[[narrow]]" value="{{_valueJson}}" type="[[selectedType]]"></body-json-editor>
