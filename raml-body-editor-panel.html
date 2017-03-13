@@ -19,8 +19,12 @@ the License.
 <link rel="import" href="../paper-listbox/paper-listbox.html">
 <link rel="import" href="../paper-item/paper-item.html">
 <link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../arc-icons/arc-icons.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../paper-menu-button/paper-menu-button.html">
+
 <link rel="import" href="../code-mirror/code-mirror.html">
-<link rel="import" href="../vertical-tabs/vertical-tabs.html">
 <link rel="import" href="../body-json-editor/body-json-editor.html">
 <link rel="import" href="../body-form-editor/body-form-editor.html">
 <link rel="import" href="cm-arc-styles.html">
@@ -28,6 +32,9 @@ the License.
 `<raml-body-editor-panel>` A body editor panel containin JSON, XML and form editors.
 
 It is meant to work with the RAML spec. However without it, it will work as a CodeMirror editor.
+
+The default view for the editor is source editor (powered by CodeMirror).
+User can switch to the form view at any time using editor controls.
 
 ### Example
 ```
@@ -59,30 +66,55 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         overflow: auto;
       }
     }
+
+    .content-actions {
+      @apply(--layout-horizontal);
+      @apply(--layout-center);
+    }
+
+    .actions-divider {
+      @apply(--layout-flex);
+    }
+
+    paper-icon-button[active] {
+      background-color: var(raml-body-editor-panel-button-active, #BDBDBD);
+    }
     </style>
-    <vertical-tabs selected="{{selected}}" on-iron-select="_tabChangedHandler" attr-for-selected="data-editor">
-      <paper-tab data-editor="json"  hidden$="[[!isJson]]">JSON</paper-tab>
-      <!-- <paper-tab  data-editor="xml" hidden$="[[!isXml]]">XML</paper-tab> -->
-      <paper-tab data-editor="form"  hidden$="[[!isForm]]">Form</paper-tab>
-      <paper-tab data-editor="code-mirror" >Raw data</paper-tab>
-      <iron-pages data-editor="code-mirror" content selected="{{selected}}" attr-for-selected="data-editor">
-        <body-json-editor data-editor="json" narrow="[[narrow]]" value="{{_valueJson}}" type="[[selectedType]]" opened="[[_computeEditorOpened(selected, 'json')]]" hidden$="[[!isJson]]"></body-json-editor>
-        <!-- <body-xml-editor data-editor="xml"  value="{{_valueXml}}" type="[[selectedType]]" opened="[[_computeEditorOpened(selected, 'xml')]]" hidden$="[[!isXml]]">XML</body-xml-editor> -->
-        <body-form-editor data-editor="form"  value="{{_valueForm}}" type="[[selectedType]]" opened="[[_computeEditorOpened(selected, 'form')]]" hidden$="[[!isForm]]"></body-form-editor>
-        <div class="cm-tab-editor" data-editor="code-mirror" >
-          <template is="dom-if" if="[[_computeHasMany(mimeTypes)]]">
-            <paper-dropdown-menu label="Select content type">
-              <paper-listbox class="dropdown-content" attr-for-selected="data-mime" selected="{{contentType}}">
-                <template is="dom-repeat" items="[[mimeTypes]]">
-                  <paper-item data-mime$="[[item]]">[[item]]</paper-item>
-                </template>
-              </paper-listbox>
-            </paper-dropdown-menu>
-          </template>
-          <code-mirror opened="[[_computeEditorOpened(selected, 'code-mirror')]]" mode="[[cmMode]]" value="{{_valueCodeMirror}}" theme="cm-arc"></code-mirror>
-        </div>
-      </iron-pages>
-    </vertical-tabs>
+    <div class="content-actions">
+      <paper-icon-button icon="arc:content-copy" id="copyButton"></paper-icon-button>
+      <paper-icon-button icon="arc:list" id="formButton" toggles active="{{formView}}"></paper-icon-button>
+      <paper-tooltip for="copyButton">Copy current editor value to clipboard</paper-tooltip>
+      <paper-tooltip for="formButton">Toggle form / source editor view</paper-tooltip>
+
+      <template is="dom-if" if="[[_computeHasMany(mimeTypes)]]">
+        <paper-dropdown-menu label="Select content type" no-label-float>
+          <paper-listbox class="dropdown-content" attr-for-selected="data-mime" selected="{{contentType}}">
+            <template is="dom-repeat" items="[[mimeTypes]]">
+              <paper-item data-mime$="[[item]]">[[item]]</paper-item>
+            </template>
+          </paper-listbox>
+        </paper-dropdown-menu>
+      </template>
+
+      <span class="actions-divider"></span>
+
+      <paper-menu-button horizontal-align="right">
+        <paper-icon-button icon="arc:more-vert" class="dropdown-trigger"></paper-icon-button>
+        <paper-menu class="dropdown-content">
+          <paper-item on-tap="clearForm">Clear form</paper-item>
+          <!-- <paper-item on-tap="prePopulate">Pre populate from schema</paper-item> -->
+        </paper-menu>
+      </paper-menu-button>
+    </div>
+    <iron-pages selected="{{selected}}" attr-for-selected="data-editor" selected-attribute="opened">
+      <div class="cm-tab-editor" data-editor="code-mirror">
+        <p>cmMode: [[cmMode]]</p>
+        <code-mirror opened mode="[[cmMode]]" value="{{_valueCodeMirror}}" theme="cm-arc"></code-mirror>
+      </div>
+      <body-json-editor data-editor="json" narrow="[[narrow]]" value="{{_valueJson}}" type="[[selectedType]]"></body-json-editor>
+      <body-form-editor data-editor="form" value="{{_valueForm}}" type="[[selectedType]]"></body-form-editor>
+      <!-- <body-xml-editor data-editor="xml" value="{{_valueXml}}" type="[[selectedType]]">XML</body-xml-editor> -->
+    </iron-pages>
   </template>
   <script>
   Polymer({
@@ -97,12 +129,13 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       // Selected tab.
       selected: {
         type: String,
-        value: 'json'
+        value: 'code-mirror',
+        observer: '_selectedChanged'
       },
       // Sets and gets the editor value.
       value: {
         type: String,
-        value: '{\n\t\n}',
+        value: '',
         notify: true
       },
       // Code mirror mode. See `<code-mirror>` docs for more information.
@@ -152,26 +185,8 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         readOnly: true,
         observer: '_mimeTypesChanged'
       },
-      // True if this method can have the XML editor
-      isXml: {
-        type: Boolean,
-        readOnly: true,
-        value: false
-      },
-      // True if this method can have the Form editor
-      isForm: {
-        type: Boolean,
-        readOnly: true,
-        value: false
-      },
-      // True if this method can have the JSON editor
-      isJson: {
-        type: Boolean,
-        readOnly: true,
-        value: false
-      },
       /**
-       * A RAML's type definition
+       * RAML's type definition.
        * A JSON editor uses it to create a schema definition (as a JSON object of {name: type}) to
        * display autosuggestions.
        */
@@ -187,21 +202,26 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       _valueForm: String,
       // Internal value of the Form editor.
       _valueXml: String,
-      // Currenlty selected editor.
-      _selectedEditor: String,
       // if set it will display narrow (mobile) layout.
       narrow: {
         type: Boolean,
         value: false
+      },
+      /**
+       * If set then the form editor instead of source editor will be displayed.
+       */
+      formView: {
+        type: Boolean,
+        observer: '_formViewChanged'
       }
     },
 
     observers: [
       '_valueChanged(value)',
-      '_editorValueChanged(_selectedEditor, "code-mirror", _valueCodeMirror)',
-      '_editorValueChanged(_selectedEditor, "json", _valueJson)',
-      '_editorValueChanged(_selectedEditor, "form", _valueForm)',
-      '_editorValueChanged(_selectedEditor, "xml", _valueXml)'
+      '_editorCodeMirrorChanged(selected, _valueCodeMirror)',
+      '_editorJsonChanged(selected, _valueJson)',
+      '_editorFormChanged(selected, _valueForm)',
+      '_editorXmlChanged(selected, _valueXml)'
     ],
 
     attached: function() {
@@ -216,164 +236,73 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       this._isReady = true;
     },
 
+    _selectedChanged: function(newVal, oldVal) {
+      if (oldVal === undefined) {
+        // initialization
+        return;
+      }
+      if (newVal === 'code-mirror') {
+        switch (oldVal) {
+          case 'json': this.set('_valueCodeMirror', this._valueJson); break;
+          case 'xml': this.set('_valueCodeMirror', this._valueXml); break;
+          case 'form': this.set('_valueCodeMirror', this._valueForm); break;
+        }
+      } else {
+        switch (newVal) {
+          case 'json': this.set('_valueJson', this._valueCodeMirror); break;
+          case 'xml': this.set('_valueXml', this._valueCodeMirror); break;
+          case 'form': this.set('_valueForm', this._valueCodeMirror); break;
+        }
+      }
+    },
+
     /**
-     * Synchronize ditors values if the synchronization is possible.
-     * For example code mirror's value will be always updated if other editor is the source.
-     *
-     * This will not synchronize the value between other editors. This synchronization is
-     * made when the tab is changing.
-     *
-     * If the content type is not corresponding with the source then the content type header
-     * value will be changed.
+     * If currently selected editor is CodeMirror then it will update
+     * element's value to the same as in the editor.
      */
-    _editorValueChanged: function(selected, source, value) {
-      if (selected !== source) {
+    _editorCodeMirrorChanged: function(selected, value) {
+      if (selected !== 'code-mirror') {
         return;
       }
       this.set('value', value);
-      if (selected !== 'code-mirror') {
-        this._valueCodeMirror = value;
-      }
-      this._updateContentTypeFromSelectedEditor();
-    },
-    /**
-     * Updates the `contentType` property depending on the selected editor if needed.
-     *
-     * @param {String} selected Selected editor name.
-     */
-    _updateContentTypeFromSelectedEditor: function(selected) {
-      var _contentType;
-      var ct = this.contentType;
-      if (selected === 'json' && this.isJson && ct !== 'application/json') {
-        _contentType = 'application/json';
-      }
-      if (selected === 'xml' && this.isXml && ct !== 'application/xml') {
-        _contentType = 'application/xml';
-      }
-      if (selected === 'form' && this.isForm && ct !== 'application/x-www-form-urlencoded') {
-        _contentType = 'application/x-www-form-urlencoded';
-      }
-      if (_contentType) {
-        this.fire('content-type-changed', {
-          value: _contentType
-        });
-      }
-    },
-
-    // Refreshes the code mirror editor when its tab is displayed.
-    _tabChangedHandler: function(e) {
-      if (!this._isReady) {
-        return;
-      }
-      if (!e.detail.item || !e.detail.item.classList) {
-        return;
-      }
-      var newSelected;
-      if (e.detail.item.classList.contains('cm-tab-editor')) {
-        this.$$('code-mirror').editor.refresh();
-        newSelected = 'code-mirror';
-      } else {
-        var name = e.detail.item.nodeName.toLowerCase();
-        if (name === 'body-json-editor') {
-          newSelected = 'json';
-        } else if (name === 'body-xml-editor') {
-          newSelected = 'xml';
-        } else if (name === 'body-form-editor') {
-          newSelected = 'form';
-        }
-      }
-      if (!newSelected) {
-        // Event comes from the child element of the paper tabs.
-        return;
-      }
-      if (this._ensureTabsSelected()) {
-        this._updateContentTypeFromSelectedEditor(this.selected);
-      }
-      this._syncValuesOnTabChange(this.selected, this._selectedEditor);
-      this._selectedEditor = this.selected;
-    },
-    /**
-     * Because tabs are dynamically hidden from the view the element must calculate
-     * if proper tabs is selected at the moment.
-     * This will select first tab that is not hidden.
-     */
-    _ensureTabsSelected: function() {
-      var ij = this.isJson;
-      var ifo = this.isForm;
-      var ix = this.isXml;
-      var sel = this.selected;
-      if (sel === 'json' && !ij) {
-        // TODO: Unhash when XML ready
-        // if (this.ix) {
-        //   this.selected = 'xml';
-        //   return true;
-        // } else
-        if (ifo) {
-          this.selected = 'form';
-          return true;
-        } else {
-          this.selected = 'code-mirror';
-          return true;
-        }
-      } else if (sel === 'xml' && !ix) {
-        if (ij) {
-          this.selected = 'json';
-          return true;
-        } else if (ifo) {
-          this.selected = 'form';
-          return true;
-        } else {
-          this.selected = 'code-mirror';
-          return true;
-        }
-      } else if (sel === 'form' && !ifo) {
-        if (ij) {
-          this.selected = 'json';
-          return true;
-          // } else if (ix) {
-          //   this.selected = 'xml';
-          //   return true;
-        } else {
-          this.selected = 'code-mirror';
-          return true;
-        }
-      } else if (!ix && !ij && !ifo) {
-        this.selected = 'code-mirror';
-        return true;
-      }
-      return false;
     },
 
     /**
-     * Sunchronizes values between editors on tab change event.
-     * This will only performs a synchronization from code mirror to other editors.
-     * Never between other editors or there will be data incompatibility.
-     *
-     * @param {String} selected New selected tab
-     * @param {String} oldSelected Old selected tab
+     * If currently selected editor is JSON editor then it will update
+     * element's value to the same as in the editor.
      */
-    _syncValuesOnTabChange: function(selected, oldSelected) {
-      if (!selected || oldSelected === selected) {
+    _editorJsonChanged: function(selected, value) {
+      if (selected !== 'json') {
         return;
       }
-      if (oldSelected === 'code-mirror') {
-        // take a value from the code mirror editor and set a value on the new selected editor
-        if (selected === 'json') {
-          this._valueJson = this._valueCodeMirror;
-        } else if (selected === 'xml') {
-          this._valueXml = this._valueCodeMirror;
-        } else if (selected === 'form') {
-          this._valueForm = this._valueCodeMirror;
-        }
+      this.set('value', value);
+    },
+
+    /**
+     * If currently selected editor is Form data editor then it will update
+     * element's value to the same as in the editor.
+     */
+    _editorFormChanged: function(selected, value) {
+      if (selected !== 'form') {
+        return;
       }
+      this.set('value', value);
+    },
+
+    /**
+     * If currently selected editor is XML editor then it will update
+     * element's value to the same as in the editor.
+     */
+    _editorXmlChanged: function(selected, value) {
+      if (selected !== 'xml') {
+        return;
+      }
+      this.set('value', value);
     },
 
     // Handler for content type changed event.
-    _ctHandler: function(e, detail) {
-      if (!detail || !detail.value) {
-        return;
-      }
-      this.set('contentType', detail.value);
+    _ctHandler: function(e) {
+      this.set('contentType', e.detail.value);
     },
     // Computes to CodeMirror mode based on the content type.
     _computeCmMode: function(contentType) {
@@ -388,9 +317,6 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     // Cleaning of the variables when the body change
     _cleanBodySettings: function() {
       this._setMimeTypes(undefined);
-      this._setIsXml(false);
-      this._setIsJson(false);
-      this._setIsForm(false);
     },
     /**
      * Called when `body` array change to set up the `mimeTypes` array.
@@ -405,58 +331,32 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       });
       this._setMimeTypes(mimes);
       if (mimes && mimes.length) {
-        this.fire('content-type-changed', {
-          value: mimes[0]
-        });
+        this.set('contentType', mimes[0]);
+        // this.fire('content-type-changed', {
+        //   value: mimes[0]
+        // });
       }
     },
     /**
-     * Chandler to the `mimeTypes` array change.
-     * It will display / hide editors depending on the mime types defined in the RAML definiotion.
-     * By default only CodeMirror editor is visible. Other editors depends on the spec.
+     * A handler for the `mimeTypes` array change.
+     * It will select firts available mime as
      */
     _mimeTypesChanged: function(mimes) {
       if (!mimes) {
         return;
       }
 
-      var isXml = false;
-      var isForm = false;
-      var isJson = false;
-
-      for (var i = 0, len = mimes.length; i < len; i++) {
-        if (!isJson && mimes[i].indexOf('json') !== -1) {
-          isJson = true;
-        } else if (!isXml && mimes[i].indexOf('xml') !== -1) {
-          isXml = true;
-        } else if (!isForm && mimes[i].indexOf('x-www-form-urlencoded') !== -1) {
-          isForm = true;
-        }
-      }
-      this._setIsXml(isXml);
-      this._setIsJson(isJson);
-      this._setIsForm(isForm);
-
       if (mimes[0] !== this.contentType) {
-        this._selectMimeType(mimes[0]);
+        this.fire('content-type-changed', {
+          value: mimes[0]
+        });
       }
-      this.$$('vertical-tabs').notifyResize();
     },
     // Computes if given argument is an array and has more than one item.
     _computeHasMany: function(arr) {
       return (arr && arr instanceof Array) ? arr.length > 1 : false;
     },
-    // Sets given `mime` type as a current content type value.
-    _selectMimeType: function(mime) {
-      this.fire('content-type-changed', {
-        value: mime
-      });
-    },
-    // Computes if the editor is selected editor in the view
-    _computeEditorOpened: function(selected, index) {
-      console.log('_computeEditorOpened', selected, index);
-      return selected === index;
-    },
+
     /**
      * Computes the `selectedType` property that is passed to the editors.
      * Editors uses it to display autocomplete feature.
@@ -480,9 +380,46 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         return;
       }
       for (var i = 0, len = body.length; i < len; i++) {
+        // the `key` property is set by `raml-to-object` element.
         if (body[i].key === mime) {
           return body[i];
         }
+      }
+    },
+    /**
+     * Toggles the editor view between source editor (code mirror) and dedicated
+     * form editors for JSON, XML and form data.
+     */
+    _formViewChanged: function(formView, oldVal) {
+      if (oldVal === undefined) {
+        return;
+      }
+      if (formView) {
+        var ct = this.contentType;
+        var toEditor;
+        if (ct) {
+          if (ct.indexOf('json') !== -1) {
+            toEditor = 'json';
+          } else if (ct.indexOf('xml') !== -1) {
+            toEditor = 'xml';
+          } else if (ct.indexOf('form-urlencoded') !== -1) {
+            toEditor = 'form';
+          }
+          this.set('selected', toEditor);
+        } else {
+          return;
+        }
+      } else {
+        this.set('selected', 'code-mirror');
+      }
+    },
+
+    clearForm: function() {
+      switch (this.selected) {
+        case 'code-mirror': this.set('_valueCodeMirror', ''); break;
+        case 'json': this.set('_valueJson', ''); break;
+        case 'xml': this.set('_valueXml', ''); break;
+        case 'form': this.set('_valueForm', ''); break;
       }
     }
   });

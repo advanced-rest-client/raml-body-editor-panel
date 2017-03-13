@@ -1,10 +1,13 @@
-[![Build Status](https://travis-ci.org/advanced-rest-client/raml-body-editor-panel.svg?branch=master)](https://travis-ci.org/advanced-rest-client/raml-body-editor-panel)  
+[![Build Status](https://travis-ci.org/advanced-rest-client/raml-body-editor-panel.svg?branch=stage)](https://travis-ci.org/advanced-rest-client/raml-body-editor-panel)  
 
 # raml-body-editor-panel
 
 `<raml-body-editor-panel>` A body editor panel containin JSON, XML and form editors.
 
 It is meant to work with the RAML spec. However without it, it will work as a CodeMirror editor.
+
+The default view for the editor is source editor (powered by CodeMirror).
+User can switch to the form view at any time using editor controls.
 
 ### Example
 ```

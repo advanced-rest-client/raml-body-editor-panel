@@ -1,3 +1,17 @@
+<a name="0.2.1"></a>
+## [0.2.1](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.1.2...v0.2.1) (2017-03-13)
+
+
+### Breaking
+
+* Redesigned the element - simnplified the element logic, removed tabs, simplified the UI ([615316705e210a57f2fbfd386758d843612ecad2](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/615316705e210a57f2fbfd386758d843612ecad2))
+
+### Update
+
+* Commented body-xml-editor so the linter will not screem for help anymore ^^: ([5499cbf25f5aad64d06eebd912ebdc3cb5227536](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/5499cbf25f5aad64d06eebd912ebdc3cb5227536))
+
+
+
 <a name="0.1.2"></a>
 ## [0.1.2](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.1.1...v0.1.2) (2016-12-21)
 
