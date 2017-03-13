@@ -1,3 +1,13 @@
+<a name="0.2.3"></a>
+## [0.2.3](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.1...v0.2.3) (2017-03-13)
+
+
+### Update
+
+* Removed debug output from the element UI ([c22e0c0524cf6fe93d717cfe2f67b31396b2716f](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/c22e0c0524cf6fe93d717cfe2f67b31396b2716f))
+
+
+
 <a name="0.2.2"></a>
 ## [0.2.2](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.1...v0.2.2) (2017-03-13)
 
