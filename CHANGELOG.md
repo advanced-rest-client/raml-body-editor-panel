@@ -1,3 +1,19 @@
+<a name="0.2.6"></a>
+## [0.2.6](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.4...v0.2.6) (2017-04-12)
+
+
+### Update
+
+* Updated the function that shitches form / source views. Now it has a fallback to a JSON by default if content type is not defined ([5b93af60491fbe94ef968a546fa27a996aa2a593](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/5b93af60491fbe94ef968a546fa27a996aa2a593))
+
+
+
+<a name="0.2.5"></a>
+## [0.2.5](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.4...v0.2.5) (2017-04-12)
+
+
+
+
 <a name="0.2.4"></a>
 ## [0.2.4](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.3...v0.2.4) (2017-03-14)
 
