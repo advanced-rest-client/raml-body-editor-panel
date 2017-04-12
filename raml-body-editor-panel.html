@@ -193,6 +193,11 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         type: Object,
         computed: '_computeSelectedType(contentType, body)'
       },
+      // Example from selected type to dispaly in the body panel on type change.
+      selectedExample: {
+        type: String,
+        computed: '_computeSelectedExample(selectedType.*)'
+      },
       // Internal value of the CodeMirror editor.
       _valueCodeMirror: String,
       // Internal value of the JSON editor.
@@ -220,7 +225,8 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       '_editorCodeMirrorChanged(selected, _valueCodeMirror)',
       '_editorJsonChanged(selected, _valueJson)',
       '_editorFormChanged(selected, _valueForm)',
-      '_editorXmlChanged(selected, _valueXml)'
+      '_editorXmlChanged(selected, _valueXml)',
+      '_upgateBodyFromExample(selectedExample)'
     ],
 
     attached: function() {
@@ -234,6 +240,18 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     ready: function() {
       this._isReady = true;
     },
+    /**
+     * Function created for code mirror. Refreshes the editor value when window is resized
+     * to update the view.
+     * This sgould be called when the element become visible after being hidden.
+     */
+    notifyResize: function() {
+      var cm = this.$$('code-mirror');
+      if (!cm) {
+        return; //view not ready.
+      }
+      cm.editor.refresh();
+    },
 
     _selectedChanged: function(newVal, oldVal) {
       if (oldVal === undefined) {
@@ -246,6 +264,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
           case 'xml': this.set('_valueCodeMirror', this._valueXml); break;
           case 'form': this.set('_valueCodeMirror', this._valueForm); break;
         }
+        this.$$('code-mirror').editor.refresh();
       } else {
         switch (newVal) {
           case 'json': this.set('_valueJson', this._valueCodeMirror); break;
@@ -415,10 +434,41 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
 
     clearForm: function() {
       switch (this.selected) {
-        case 'code-mirror': this.set('_valueCodeMirror', ''); break;
+        case 'code-mirror':
+          this.set('_valueCodeMirror', '');
+          this.$$('code-mirror').editor.refresh();
+        break;
         case 'json': this.set('_valueJson', ''); break;
         case 'xml': this.set('_valueXml', ''); break;
         case 'form': this.set('_valueForm', ''); break;
+      }
+    },
+    // Computes an example for currently selected body
+    _computeSelectedExample: function(record) {
+      if (!record || !record.base) {
+        return;
+      }
+      var selectedType = record.base;
+      if (selectedType.example) {
+        return selectedType.example;
+      }
+      if (selectedType.examples && selectedType.examples.length) {
+        return selectedType.examples[0];
+      }
+    },
+    // Called when the example change
+    _upgateBodyFromExample: function(newBody) {
+      if (!newBody) {
+        return;
+      }
+      switch (this.selected) {
+        case 'code-mirror':
+          this.set('_valueCodeMirror', newBody);
+          this.$$('code-mirror').editor.refresh();
+        break;
+        case 'json': this.set('_valueJson', newBody); break;
+        case 'xml': this.set('_valueXml', newBody); break;
+        case 'form': this.set('_valueForm', newBody); break;
       }
     }
   });
