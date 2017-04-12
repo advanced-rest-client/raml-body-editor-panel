@@ -404,10 +404,10 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
           } else if (ct.indexOf('form-urlencoded') !== -1) {
             toEditor = 'form';
           }
-          this.set('selected', toEditor);
         } else {
-          return;
+          toEditor = 'json'; //falback to any...
         }
+        this.set('selected', toEditor);
       } else {
         this.set('selected', 'code-mirror');
       }
