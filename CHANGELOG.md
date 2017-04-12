@@ -1,3 +1,13 @@
+<a name="0.2.9"></a>
+## [0.2.9](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.7...v0.2.9) (2017-04-12)
+
+
+### New
+
+* Added ability to display an example as default value when type change ([acba80482064ca5a6720be0a7e24b3c7235d04a3](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/acba80482064ca5a6720be0a7e24b3c7235d04a3))
+
+
+
 <a name="0.2.8"></a>
 ## [0.2.8](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.7...v0.2.8) (2017-04-12)
 
