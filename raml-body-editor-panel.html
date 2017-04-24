@@ -23,10 +23,10 @@ the License.
 <link rel="import" href="../anypoint-icons/anypoint-icons.html">
 <link rel="import" href="../paper-tooltip/paper-tooltip.html">
 <link rel="import" href="../paper-menu-button/paper-menu-button.html">
-
 <link rel="import" href="../code-mirror/code-mirror.html">
 <link rel="import" href="../body-json-editor/body-json-editor.html">
 <link rel="import" href="../body-form-editor/body-form-editor.html">
+<link rel="import" href="../anypoint-styles/dropdown-menu.html">
 <link rel="import" href="cm-arc-styles.html">
 <!--
 `<raml-body-editor-panel>` A body editor panel containin JSON, XML and form editors.
@@ -56,6 +56,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
 -->
 <dom-module id="raml-body-editor-panel">
   <template>
+    <style include="anypoint-dropdown-menu-styles"></style>
     <style>
      :host {
       display: block;
@@ -83,15 +84,23 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     paper-icon-button[active] {
       background-color: var(raml-body-editor-panel-button-active, #BDBDBD);
     }
+
+    .type-selector {
+      margin-left: 12px;
+    }
+
+    .anypoint-dropdown {
+      border: 2px solid var(--anypoint-dropdown-menu-border-color, --anypoint-color-aluminum4);;
+    }
     </style>
     <div class="content-actions">
-      <paper-icon-button icon="anypoint:copy-to-clipboard" id="copyButton"></paper-icon-button>
-      <paper-icon-button icon="anypoint:list" id="formButton" toggles active="{{formView}}"></paper-icon-button>
+      <paper-icon-button noink icon="anypoint:copy-to-clipboard" id="copyButton"></paper-icon-button>
+      <paper-icon-button noink icon="anypoint:list" id="formButton" toggles active="{{formView}}"></paper-icon-button>
       <paper-tooltip for="copyButton">Copy current editor value to clipboard</paper-tooltip>
       <paper-tooltip for="formButton">Toggle form / source editor view</paper-tooltip>
 
       <template is="dom-if" if="[[_computeHasMany(mimeTypes)]]">
-        <paper-dropdown-menu label="Select content type" no-label-float>
+        <paper-dropdown-menu label="Select content type" no-label-float class="type-selector anypoint-dropdown-menu">
           <paper-listbox class="dropdown-content" attr-for-selected="data-mime" selected="{{contentType}}">
             <template is="dom-repeat" items="[[mimeTypes]]">
               <paper-item data-mime$="[[item]]">[[item]]</paper-item>
@@ -103,8 +112,8 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       <span class="actions-divider"></span>
 
       <paper-menu-button horizontal-align="right" hidden="[[_computeHiddenMenu(selected)]]">
-        <paper-icon-button icon="anypoint:contextmenu" class="dropdown-trigger"></paper-icon-button>
-        <paper-menu class="dropdown-content">
+        <paper-icon-button noink icon="anypoint:contextmenu" class="dropdown-trigger"></paper-icon-button>
+        <paper-menu class="dropdown-content anypoint-dropdown">
           <paper-item on-tap="clearForm">Clear form</paper-item>
           <!-- <paper-item on-tap="prePopulate">Pre populate from schema</paper-item> -->
         </paper-menu>
