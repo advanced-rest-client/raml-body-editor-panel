@@ -35,7 +35,8 @@
     "paper-tooltip": "PolymerElements/paper-tooltip#^1.1.3",
     "paper-menu-button": "PolymerElements/paper-menu-button#^1.5.2",
     "anypoint-icons": "advanced-rest-client/anypoint-icons#^0.1.11",
-    "anypoint-styles": "advanced-rest-client/anypoint-styles#^0.1.7"
+    "anypoint-styles": "advanced-rest-client/anypoint-styles#^0.1.7",
+    "clipboard-copy": "advanced-rest-client/clipboard-copy#^0.1.1"
   },
   "devDependencies": {
     "iron-component-page": "polymerelements/iron-component-page#1.0.0",

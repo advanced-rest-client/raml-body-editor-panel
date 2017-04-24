@@ -27,6 +27,7 @@ the License.
 <link rel="import" href="../body-json-editor/body-json-editor.html">
 <link rel="import" href="../body-form-editor/body-form-editor.html">
 <link rel="import" href="../anypoint-styles/dropdown-menu.html">
+<link rel="import" href="../clipboard-copy/clipboard-copy.html">
 <link rel="import" href="cm-arc-styles.html">
 <!--
 `<raml-body-editor-panel>` A body editor panel containin JSON, XML and form editors.
@@ -75,6 +76,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     .content-actions {
       @apply(--layout-horizontal);
       @apply(--layout-center);
+      height: 56px;
     }
 
     .actions-divider {
@@ -94,7 +96,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     }
     </style>
     <div class="content-actions">
-      <paper-icon-button noink icon="anypoint:copy-to-clipboard" id="copyButton"></paper-icon-button>
+      <paper-icon-button noink icon="anypoint:copy-to-clipboard" id="copyButton" on-tap="_copyToClipboard"></paper-icon-button>
       <paper-icon-button noink icon="anypoint:list" id="formButton" toggles active="{{formView}}"></paper-icon-button>
       <paper-tooltip for="copyButton">Copy current editor value to clipboard</paper-tooltip>
       <paper-tooltip for="formButton">Toggle form / source editor view</paper-tooltip>
@@ -127,6 +129,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       <body-form-editor data-editor="form" value="{{_valueForm}}" type="[[selectedType]]"></body-form-editor>
       <!-- <body-xml-editor data-editor="xml" value="{{_valueXml}}" type="[[selectedType]]">XML</body-xml-editor> -->
     </iron-pages>
+    <clipboard-copy content="[[value]]"></clipboard-copy>
   </template>
   <script>
   Polymer({
@@ -487,6 +490,20 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     // Computes "hidden" attribute for the dropdown menu. True if is code-mirror.
     _computeHiddenMenu: function(selected) {
       return selected === 'code-mirror';
+    },
+
+    _copyToClipboard: function() {
+      var elm = this.$$('clipboard-copy');
+      if (elm.copy()) {
+        this.$.copyButton.icon = 'anypoint:check';
+      } else {
+        this.$.copyButton.icon = 'anypoint:close';
+      }
+      setTimeout(this._resetCopyButtonState.bind(this), 1000);
+    },
+
+    _resetCopyButtonState: function() {
+      this.$.copyButton.icon = 'anypoint:copy-to-clipboard';
     }
   });
   </script>
