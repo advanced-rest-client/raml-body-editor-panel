@@ -20,7 +20,7 @@ the License.
 <link rel="import" href="../paper-item/paper-item.html">
 <link rel="import" href="../iron-pages/iron-pages.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../arc-icons/arc-icons.html">
+<link rel="import" href="../anypoint-icons/anypoint-icons.html">
 <link rel="import" href="../paper-tooltip/paper-tooltip.html">
 <link rel="import" href="../paper-menu-button/paper-menu-button.html">
 
@@ -85,8 +85,8 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     }
     </style>
     <div class="content-actions">
-      <paper-icon-button icon="arc:content-copy" id="copyButton"></paper-icon-button>
-      <paper-icon-button icon="arc:list" id="formButton" toggles active="{{formView}}"></paper-icon-button>
+      <paper-icon-button icon="anypoint:copy-to-clipboard" id="copyButton"></paper-icon-button>
+      <paper-icon-button icon="anypoint:list" id="formButton" toggles active="{{formView}}"></paper-icon-button>
       <paper-tooltip for="copyButton">Copy current editor value to clipboard</paper-tooltip>
       <paper-tooltip for="formButton">Toggle form / source editor view</paper-tooltip>
 
@@ -103,7 +103,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       <span class="actions-divider"></span>
 
       <paper-menu-button horizontal-align="right" hidden="[[_computeHiddenMenu(selected)]]">
-        <paper-icon-button icon="arc:more-vert" class="dropdown-trigger"></paper-icon-button>
+        <paper-icon-button icon="anypoint:contextmenu" class="dropdown-trigger"></paper-icon-button>
         <paper-menu class="dropdown-content">
           <paper-item on-tap="clearForm">Clear form</paper-item>
           <!-- <paper-item on-tap="prePopulate">Pre populate from schema</paper-item> -->
