@@ -1,3 +1,9 @@
+<a name="0.2.11"></a>
+## [0.2.11](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.9...v0.2.11) (2017-05-26)
+
+
+
+
 <a name="0.2.9"></a>
 ## [0.2.9](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.7...v0.2.9) (2017-04-12)
 
