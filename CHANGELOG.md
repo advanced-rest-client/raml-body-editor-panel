@@ -1,3 +1,48 @@
+<a name="0.2.15"></a>
+## [0.2.15](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.14...v0.2.15) (2017-06-22)
+
+
+
+
+<a name="0.2.14"></a>
+## [0.2.14](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.13...v0.2.14) (2017-06-22)
+
+
+### Fix
+
+* Updated code-mirror styles that cause Safari 10 to hang. ([f163d6682fde86ee83fda590e243fa9d5cb2e216](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/f163d6682fde86ee83fda590e243fa9d5cb2e216))
+
+### New
+
+* Added basic tests for the element. ([cfd009c039fcb43bf8fe64188b91a1e4580e7add](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/cfd009c039fcb43bf8fe64188b91a1e4580e7add))
+
+### Update
+
+* Travis configuration: ([a7abe683cb1168c2d6ad53f5f4d87674e3789968](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/a7abe683cb1168c2d6ad53f5f4d87674e3789968))
+* Updated demo page to work only with payload carrying methods. ([cfbc60bfcfeb788f5e19129ab65466356865663d](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/cfbc60bfcfeb788f5e19129ab65466356865663d))
+* Updated dependencies vesions. Restored tests. ([b445f4dafb5256d0ea2243bf871dce7711bfeffb](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/b445f4dafb5256d0ea2243bf871dce7711bfeffb))
+* Updated list of browsers to be tested. Removed IE10. ([4d0bf7628816ea67d8c9d4be52ec21108d8aa94c](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/4d0bf7628816ea67d8c9d4be52ec21108d8aa94c))
+
+
+
+<a name="0.2.13"></a>
+## [0.2.13](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.12...v0.2.13) (2017-05-26)
+
+
+
+
+<a name="0.2.12"></a>
+## [0.2.12](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.11...v0.2.12) (2017-05-26)
+
+
+
+
+<a name="0.2.11"></a>
+## [0.2.11](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.9...v0.2.11) (2017-05-26)
+
+
+
+
 <a name="0.2.9"></a>
 ## [0.2.9](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.2.7...v0.2.9) (2017-04-12)
 

@@ -20,6 +20,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <!-- Step 1: import the element to test -->
     <link rel="import" href="../raml-body-editor-panel.html">
+    <link rel="import" href="../../raml-js-parser/raml-js-parser.html">
+    <link rel="import" href="../../raml-json-enhance/raml-json-enhance.html">
+    <link rel="import" href="../../arc-polyfills/arc-polyfills.html">
   </head>
   <body>
 
@@ -29,13 +32,69 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </template>
     </test-fixture>
 
+    <test-fixture id="parser">
+      <template>
+        <raml-js-parser json></raml-js-parser>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="enhancer">
+      <template>
+        <raml-json-enhance></raml-json-enhance>
+      </template>
+    </test-fixture>
+
     <script>
-    /* global suite, test, fixture, assert */
+    /* global fixture, assert, TestHelpers */
     suite('basic', function() {
-      test('`raml-body-editor-panel` should be initialized', function() {
-        var element = fixture('basic');
-        assert.equal(element.isAttached, true, 'element.isAttached equals true');
+
+      var element;
+      var raml;
+
+      suiteSetup(function(done) {
+        var baseUrl = location.href.substr(0, location.href.lastIndexOf('/') + 1);
+        var parser = fixture('parser');
+        var enhancer = fixture('enhancer');
+        enhancer.addEventListener('raml-json-enhance-ready', function(e) {
+          raml = e.detail.json.resources[0].methods[0];
+          done();
+        });
+        parser.loadApi(baseUrl + 'test.raml')
+        .then(function(data) {
+          enhancer.json = data.json.specification;
+        });
       });
+
+      setup(function() {
+        element = fixture('basic');
+        element.body = raml.body;
+        TestHelpers.forceXIfStamp(element);
+      });
+
+      test('mimeTypes is an array', function() {
+        assert.typeOf(element.mimeTypes, 'array');
+      });
+
+      test('mimeTypes has one element', function() {
+        assert.lengthOf(element.mimeTypes, 1);
+      });
+
+      test('mimeTypes only item is application/json', function() {
+        assert.equal(element.mimeTypes[0], 'application/json');
+      });
+
+      test('contentType equal application/json', function() {
+        assert.equal(element.contentType, 'application/json');
+      });
+
+      test('_computeHasMany() should compute false', function() {
+        assert.isFalse(element._computeHasMany(element.mimeTypes));
+      });
+
+      test('selectedType equals body', function() {
+        assert.deepEqual(element.selectedType, raml.body[0]);
+      });
+
     });
     </script>
 
