@@ -27,7 +27,7 @@ the License.
 <link rel="import" href="../code-mirror/code-mirror.html">
 <link rel="import" href="../body-json-editor/body-json-editor.html">
 <link rel="import" href="../body-form-editor/body-form-editor.html">
-<link rel="import" href="cm-arc-styles.html">
+<link rel="import" href="../code-mirror-styles/cm-arc-styles.html">
 <!--
 `<raml-body-editor-panel>` A body editor panel containin JSON, XML and form editors.
 
@@ -350,9 +350,6 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       this._setMimeTypes(mimes);
       if (mimes && mimes.length) {
         this.set('contentType', mimes[0]);
-        // this.fire('content-type-changed', {
-        //   value: mimes[0]
-        // });
       }
     },
     /**
