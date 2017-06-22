@@ -62,17 +62,39 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <h1>The raml-body-editor-panel element</h1>
       <div main>
         <template is="dom-if" if="[[isMethod]]">
-          <raml-body-editor-panel value="{{body}}" body="[[selected.body]]" content-type="{{contentType}}"></raml-body-editor-panel>
-          <h4>Produced output</h4>
-          <output>{{body}}</output>
-          <h4>Content type</h4>
-          <output>[[contentType]]</output>
+          <template is="dom-if" if="[[hasPayload]]">
+            <raml-body-editor-panel value="{{body}}" body="[[selected.body]]" content-type="{{contentType}}"></raml-body-editor-panel>
+            <h4>Produced output</h4>
+            <output>{{body}}</output>
+            <h4>Content type</h4>
+            <output>[[contentType]]</output>
+          </template>
+          <template is="dom-if" if="[[!hasPayload]]">
+            <p>Select method that can carry a body</p>
+          </template>
         </template>
         <p hidden$="[[isMethod]]">Select a method</p>
       </div>
     </raml-demo-page>
     <paper-toast text="Methods are not supported in this demo." id="noMethods"></paper-toast>
   </template>
+  <script>
+  (function(scope) {
+    scope.observers = ['_isMethodChanged(isMethod, selected)'];
+    scope.hasPayload = false;
+    scope._isMethodChanged = function(isMethod, selected) {
+      if (isMethod && selected && selected.method) {
+        if (['get', 'head'].indexOf(selected.method.toLowerCase()) === -1) {
+          scope.hasPayload = true;
+        } else {
+          scope.hasPayload = false;
+        }
+        return;
+      }
+      scope.hasPayload = false;
+    };
+  })(document.getElementById('app'));
+  </script>
 </body>
 
 </html>
