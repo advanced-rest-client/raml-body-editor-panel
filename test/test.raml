@@ -1,0 +1,16 @@
+#%RAML 1.0
+title: My API with Types
+
+/people:
+  post:
+    body:
+      application/json:
+        displayName: Test
+        type: object
+        properties:
+          name: string
+          value:
+            type: string
+            example: test
+            default: test
+        description: Test method with payload.
