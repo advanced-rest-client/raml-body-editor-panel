@@ -23,7 +23,7 @@ the License.
 <link rel="import" href="../arc-icons/arc-icons.html">
 <link rel="import" href="../paper-tooltip/paper-tooltip.html">
 <link rel="import" href="../paper-menu-button/paper-menu-button.html">
-
+<link rel="import" href="../clipboard-copy/clipboard-copy.html">
 <link rel="import" href="../code-mirror/code-mirror.html">
 <link rel="import" href="../body-json-editor/body-json-editor.html">
 <link rel="import" href="../body-form-editor/body-form-editor.html">
@@ -83,7 +83,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     }
     </style>
     <div class="content-actions">
-      <paper-icon-button icon="arc:content-copy" id="copyButton"></paper-icon-button>
+      <paper-icon-button icon="arc:content-copy" id="copyButton" on-tap="_copyToClipboard"></paper-icon-button>
       <paper-icon-button icon="arc:list" id="formButton" toggles active="{{formView}}"></paper-icon-button>
       <paper-tooltip for="copyButton">Copy current editor value to clipboard</paper-tooltip>
       <paper-tooltip for="formButton">Toggle form / source editor view</paper-tooltip>
@@ -112,10 +112,11 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       <div class="cm-tab-editor" data-editor="code-mirror">
         <code-mirror opened mode="[[cmMode]]" value="{{_valueCodeMirror}}" theme="cm-arc"></code-mirror>
       </div>
-      <body-json-editor data-editor="json" narrow="[[narrow]]" value="{{_valueJson}}" type="[[selectedType]]"></body-json-editor>
+      <body-json-editor attr-for-opened="opened" data-editor="json" narrow="[[narrow]]" value="{{_valueJson}}" raml-type="[[selectedType]]"></body-json-editor>
       <body-form-editor data-editor="form" value="{{_valueForm}}" type="[[selectedType]]"></body-form-editor>
       <!-- <body-xml-editor data-editor="xml" value="{{_valueXml}}" type="[[selectedType]]">XML</body-xml-editor> -->
     </iron-pages>
+    <clipboard-copy></clipboard-copy>
   </template>
   <script>
   Polymer({
@@ -469,6 +470,26 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         case 'xml': this.set('_valueXml', newBody); break;
         case 'form': this.set('_valueForm', newBody); break;
       }
+    },
+
+    /**
+     * Coppies current response text value to clipboard.
+     */
+    _copyToClipboard: function(e) {
+      var button = Polymer.dom(e).localTarget;
+      var copy = this.$$('clipboard-copy');
+      copy.content = this.value;
+      if (copy.copy()) {
+        button.icon = 'arc:done';
+      } else {
+        button.icon = 'arc:error';
+      }
+      this.async(function() {
+        this._resetCopyButtonState(button);
+      }, 1000);
+    },
+    _resetCopyButtonState: function(button) {
+      button.icon = 'arc:content-copy';
     }
   });
   </script>
