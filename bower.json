@@ -26,7 +26,7 @@
     "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.3.1",
     "code-mirror": "advanced-rest-client/code-mirror#^1.0.18",
     "paper-tabs": "PolymerElements/paper-tabs#^1.7.0",
-    "body-json-editor": "advanced-rest-client/body-json-editor#^0.1.2",
+    "body-json-editor": "advanced-rest-client/body-json-editor#^0.2.0",
     "paper-dropdown-menu": "PolymerElements/paper-dropdown-menu#^1.4.3",
     "paper-listbox": "PolymerElements/paper-listbox#^1.1.2",
     "paper-item": "PolymerElements/paper-item#^1.2.1",
@@ -47,7 +47,7 @@
     "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
     "arc-demo-helpers": "advanced-rest-client/arc-demo-helpers#^1.0.4",
     "raml-js-parser": "advanced-rest-client/raml-js-parser#^2.0.0",
-    "raml-json-enhance": "advanced-rest-client/raml-json-enhance#^0.1.13",
+    "raml-json-enhance": "advanced-rest-client/raml-json-enhance#^0.2.0",
     "arc-polyfills": "advanced-rest-client/arc-polyfills#^0.1.8"
   },
   "ignore": [
