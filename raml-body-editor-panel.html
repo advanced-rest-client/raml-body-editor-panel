@@ -25,8 +25,10 @@ the License.
 <link rel="import" href="../paper-menu-button/paper-menu-button.html">
 <link rel="import" href="../clipboard-copy/clipboard-copy.html">
 <link rel="import" href="../body-json-editor/body-json-editor.html">
-<link rel="import" href="../body-form-editor/body-form-editor.html">
+<link rel="import" href="../form-data-editor/form-data-editor.html">
 <link rel="import" href="../raw-payload-editor/raw-payload-editor.html">
+<link rel="import" href="../multipart-payload-editor/multipart-payload-editor.html">
+<link rel="import" href="../files-payload-editor/files-payload-editor.html">
 <!--
 `<raml-body-editor-panel>` A body editor panel containin JSON, XML and form editors.
 
@@ -83,7 +85,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     </style>
     <div class="content-actions">
       <paper-icon-button icon="arc:content-copy" id="copyButton" on-tap="_copyToClipboard"></paper-icon-button>
-      <paper-icon-button icon="arc:list" id="formButton" toggles active="{{formView}}"></paper-icon-button>
+      <paper-icon-button icon="arc:list" id="formButton" toggles active="{{formView}}" hidden$="[[formEditorDisabled]]"></paper-icon-button>
       <paper-tooltip for="copyButton">Copy current editor value to clipboard</paper-tooltip>
       <paper-tooltip for="formButton">Toggle form / source editor view</paper-tooltip>
 
@@ -106,10 +108,12 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         </paper-menu>
       </paper-menu-button>
     </div>
-    <iron-pages selected="{{selected}}" attr-for-selected="data-editor" selected-attribute="opened">
-      <raw-payload-editor data-editor="code-mirror" attr-for-opened="opened" value="{{value}}"></raw-payload-editor>
-      <body-json-editor attr-for-opened="opened" data-editor="json" narrow="[[narrow]]" value="{{value}}" raml-type="[[selectedType]]"></body-json-editor>
-      <body-form-editor data-editor="form" value="{{_valueForm}}" type="[[selectedType]]"></body-form-editor>
+    <iron-pages selected="{{openedEditor}}" selected-attribute="opened">
+      <raw-payload-editor attr-for-opened="opened" value="{{value}}" content-type="[[contentType]]"></raw-payload-editor>
+      <form-data-editor attr-for-opened="opened" narrow="[[narrow]]" value="{{value}}" raml-type="[[selectedType]]"></form-data-editor>
+      <multipart-payload-editor attr-for-opened="opened" value="{{value}}"></multipart-payload-editor>
+      <files-payload-editor attr-for-opened="opened" value="{{value}}"></files-payload-editor>
+      <body-json-editor attr-for-opened="opened" narrow="[[narrow]]" value="{{value}}" raml-type="[[selectedType]]"></body-json-editor>
     </iron-pages>
     <clipboard-copy></clipboard-copy>
   </template>
@@ -123,24 +127,29 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
      * @param {String} value Current editor value
      */
     properties: {
-      // Selected tab.
-      selected: {
-        type: String,
-        value: 'code-mirror',
-        observer: '_selectedChanged'
+      /**
+       * Currently selected editor.
+       *
+       * - 0 for Raw editor
+       * - 1 for Form data
+       * - 2 for Multipart
+       * - 3 for File
+       */
+      openedEditor: {
+        type: Number,
+        value: 0
       },
-      // Sets and gets the editor value.
+      /**
+       * A HTTP body.
+       *
+       * Depending of current editor selection the type can vary.
+       *
+       * @type {String|FormData|File}
+       */
       value: {
         type: String,
         value: '',
         notify: true
-      },
-      // Code mirror mode. See `<code-mirror>` docs for more information.
-      // This is computed from the content type property.
-      cmMode: {
-        type: String,
-        value: 'application/json',
-        computed: '_computeCmMode(contentType)'
       },
       /**
        * When set it will attempt to run associated code mirror mode.
@@ -163,9 +172,9 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       },
       /**
        * Body definition from the RAML file.
-       * It should be array of the body types.
-       * It expects to have expanded types (so there's no sub-types). This can be done by using
-       * the `<raml-js-parser>` element which expands the types definition.
+       * It should be array of the body types. It expects to have expanded types
+       * (so there's no sub-types). This can be done by using the
+       * `<raml-js-parser>` element which expands the types definition.
        *
        * When set then the editor will show only forms for correstponding types that are available
        * for the method.
@@ -211,13 +220,15 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       formView: {
         type: Boolean,
         observer: '_formViewChanged'
-      }
+      },
+
+      formEditorDisabled: Boolean
     },
 
     observers: [
       '_valueChanged(value)',
-      '_editorFormChanged(selected, _valueForm)',
-      '_updateBodyFromExample(selectedExample)'
+      '_updateBodyFromExample(selectedExample)',
+      '_contentTypeChanged(contentType)'
     ],
 
     attached: function() {
@@ -243,6 +254,31 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       // }
       // cm.editor.refresh();
       console.warn('Fix me pls');
+    },
+    /**
+     * Updated list of available editors depending on a content type.
+     */
+    _contentTypeChanged: function(contentType) {
+      var value = this.value;
+      this.openedEditor = 0;
+      if (contentType.indexOf('multipart/form-data') === 0 || value instanceof FormData) {
+        this.formEditorDisabled = false;
+        return;
+      }
+      if (contentType === 'application/octet-stream' || value instanceof Blob) {
+        this.formEditorDisabled = false;
+        return;
+      }
+      if (contentType.indexOf('json') !== -1) {
+        this.openedEditor = 0;
+        this.formEditorDisabled = false;
+        return;
+      }
+      if (contentType === 'application/x-www-form-urlencoded') {
+        this.formEditorDisabled = false;
+        return;
+      }
+      this.formEditorDisabled = true;
     },
 
     _selectedChanged: function(newVal, oldVal) {
@@ -273,10 +309,6 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     // Handler for content type changed event.
     _ctHandler: function(e) {
       this.set('contentType', e.detail.value);
-    },
-    // Computes to CodeMirror mode based on the content type.
-    _computeCmMode: function(contentType) {
-      return contentType;
     },
     // Fires the `body-value-changed` event when the value has changed.
     _valueChanged: function(value) {
@@ -361,24 +393,29 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       if (oldVal === undefined) {
         return;
       }
-      if (formView) {
-        var ct = this.contentType;
-        var toEditor;
-        if (ct) {
-          if (ct.indexOf('json') !== -1) {
-            toEditor = 'json';
-          } else if (ct.indexOf('xml') !== -1) {
-            toEditor = 'xml';
-          } else if (ct.indexOf('form-urlencoded') !== -1) {
-            toEditor = 'form';
-          }
-        } else {
-          toEditor = 'json'; //falback to any...
-        }
-        this.set('selected', toEditor);
-      } else {
-        this.set('selected', 'code-mirror');
+      if (!formView) {
+        this.openedEditor = 0;
+        return;
       }
+      var contentType = this.contentType;
+      var value = this.value;
+      if (contentType.indexOf('multipart/form-data') === 0 || value instanceof FormData) {
+        this.openedEditor = 2;
+        return;
+      }
+      if (contentType === 'application/octet-stream' || value instanceof Blob) {
+        this.openedEditor = 3;
+        return;
+      }
+      if (contentType.indexOf('json') !== -1) {
+        this.openedEditor = 4;
+        return;
+      }
+      if (contentType === 'application/x-www-form-urlencoded') {
+        this.openedEditor = 1;
+        return;
+      }
+      this.openedEditor = 0;
     },
 
     clearForm: function() {
