@@ -146,6 +146,17 @@ types:
         type: array
         items: string
         description: List of tags associated with the user.
+  File:
+    properties:
+      originalName:
+        type: string
+        description: Original file name.
+      created:
+        type: datetime
+        description: Original file creation time
+      file:
+        type: file
+        description: File content stored on the server.
 /test:
   post:
     body:
@@ -168,3 +179,13 @@ types:
       application/octet-stream:
         type: file
         description: A file to send
+  /file:
+    put:
+      body:
+        image/*:
+          type: file
+          fileTypes: ['image/*']
+    post:
+      body:
+        multipart/form-data:
+          type: File

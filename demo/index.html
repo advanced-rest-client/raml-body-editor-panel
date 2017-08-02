@@ -59,7 +59,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <body unresolved>
   <template is="dom-bind" id="app">
     <raml-demo-page raml="{{raml}}" selected-object="{{selected}}" is-method="{{isMethod}}" path="{{path}}">
-      <paper-item data-url$="[[testRaml]]">RAML 1.0 demo</paper-item>
+      <paper-item data-url$="[[demoRaml]]">RAML 1.0 demo</paper-item>
+      <paper-item data-url$="[[testCaseRaml]]">RAML 1.0 test case</paper-item>
       <h1>The raml-body-editor-panel element</h1>
       <div main>
         <template is="dom-if" if="[[isMethod]]">
@@ -99,7 +100,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       path = path.substr(0, path.lastIndexOf('/') + 1);
     }
     var ramlRoot = location.protocol + '//' + location.host + path.replace('demo', 'test');
-    scope.testRaml = ramlRoot + 'demo.raml';
+    scope.demoRaml = ramlRoot + 'demo.raml';
+    scope.testCaseRaml = ramlRoot + 'test.raml';
   })(document.getElementById('app'));
   </script>
 </body>

@@ -17,8 +17,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script src="../../web-component-tester/browser.js"></script>
     <script src="../../iron-test-helpers/test-helpers.js"></script>
     <script src="../../iron-test-helpers/mock-interactions.js"></script>
-
-    <!-- Step 1: import the element to test -->
     <link rel="import" href="../raml-body-editor-panel.html">
     <link rel="import" href="../../raml-js-parser/raml-js-parser.html">
     <link rel="import" href="../../raml-json-enhance/raml-json-enhance.html">
@@ -56,7 +54,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         var parser = fixture('parser');
         var enhancer = fixture('enhancer');
         enhancer.addEventListener('raml-json-enhance-ready', function(e) {
-          raml = e.detail.json.resources[0].methods[0];
+          raml = e.detail.json;
           done();
         });
         parser.loadApi(baseUrl + 'test.raml')
@@ -65,36 +63,176 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
       });
 
-      setup(function() {
-        element = fixture('basic');
-        element.body = raml.body;
-        TestHelpers.forceXIfStamp(element);
+      suite('Basic computations', function() {
+        setup(function() {
+          element = fixture('basic');
+          element.body = raml.resources[0].methods[0].body;
+          TestHelpers.forceXIfStamp(element);
+        });
+
+        test('mimeTypes is an array', function() {
+          assert.typeOf(element.mimeTypes, 'array');
+        });
+
+        test('mimeTypes has 4 elements', function() {
+          assert.lengthOf(element.mimeTypes, 4);
+        });
+
+        test('contentType equal first mime type', function() {
+          assert.equal(element.contentType, 'application/json');
+        });
+
+        test('Mime type selector is rendered', function() {
+          var node = Polymer.dom(element.root).querySelector('paper-dropdown-menu');
+          assert.ok(node);
+        });
       });
 
-      test('mimeTypes is an array', function() {
-        assert.typeOf(element.mimeTypes, 'array');
+      suite('_computeHasMany()', function() {
+        test('Returns false for empty array', function() {
+          assert.isFalse(element._computeHasMany([]));
+        });
+
+        test('Returns false for not array', function() {
+          assert.isFalse(element._computeHasMany('test'));
+        });
+
+        test('Returns false for an object', function() {
+          assert.isFalse(element._computeHasMany({}));
+        });
+
+        test('Returns false for array with single item', function() {
+          assert.isFalse(element._computeHasMany(['test']));
+        });
+
+        test('Returns true for array with multiple items', function() {
+          assert.isTrue(element._computeHasMany(['test', 'other']));
+        });
       });
 
-      test('mimeTypes has one element', function() {
-        assert.lengthOf(element.mimeTypes, 1);
+      suite('JSON content type', function() {
+        setup(function() {
+          element = fixture('basic');
+          element.body = raml.resources[0].methods[0].body;
+          TestHelpers.forceXIfStamp(element);
+        });
+
+        test('selectedType equals body', function() {
+          assert.deepEqual(element.selectedType, raml.resources[0].methods[0].body[0]);
+        });
+
+        test('openedEditor equals 0', function() {
+          assert.equal(element.openedEditor, 0);
+        });
+
+        test('Computed selectedExample', function() {
+          assert.ok(element.selectedExample);
+          assert.typeOf(element.selectedExample, 'string');
+        });
+
+        test('formView is set to false', function() {
+          assert.isFalse(element.formView);
+        });
+
+        test('formEditorDisabled is set to false', function() {
+          assert.isFalse(element.formEditorDisabled);
+        });
+
+        test('Setting formView opens JSON form editor', function() {
+          element.formView = true;
+          TestHelpers.forceXIfStamp(element);
+          assert.equal(element.openedEditor, 4);
+          var node = Polymer.dom(element.root).querySelector('iron-pages > [opened]');
+          assert.equal(node.nodeName.toLowerCase(), 'body-json-editor');
+        });
+
+        test('Value is computed from example', function() {
+          assert.equal(element.value, '{\n  "name": "test"\n}');
+        });
       });
 
-      test('mimeTypes only item is application/json', function() {
-        assert.equal(element.mimeTypes[0], 'application/json');
+      suite('XML content type', function() {
+        setup(function() {
+          element = fixture('basic');
+          element.body = raml.resources[0].methods[0].body;
+          element.contentType = 'application/xml';
+          TestHelpers.forceXIfStamp(element);
+        });
+
+        test('selectedType equals body', function() {
+          assert.deepEqual(element.selectedType, raml.resources[0].methods[0].body[1]);
+        });
+
+        test('openedEditor equals 0', function() {
+          assert.equal(element.openedEditor, 0);
+        });
+
+        test('formView is set to false', function() {
+          assert.isFalse(element.formView);
+        });
+
+        test('formEditorDisabled is set to true', function() {
+          assert.isTrue(element.formEditorDisabled);
+        });
       });
 
-      test('contentType equal application/json', function() {
-        assert.equal(element.contentType, 'application/json');
+      suite('URL encoded data', function() {
+        setup(function() {
+          element = fixture('basic');
+          element.body = raml.resources[0].methods[0].body;
+          element.contentType = 'application/x-www-form-urlencoded';
+          TestHelpers.forceXIfStamp(element);
+        });
+
+        test('selectedType equals body', function() {
+          assert.deepEqual(element.selectedType, raml.resources[0].methods[0].body[2]);
+        });
+
+        test('openedEditor equals 0', function() {
+          assert.equal(element.openedEditor, 0);
+        });
+
+        test('formView is set to false', function() {
+          assert.isFalse(element.formView);
+        });
+
+        test('formEditorDisabled is set to false', function() {
+          assert.isFalse(element.formEditorDisabled);
+        });
+
+        test('Setting formView opens form editor form editor', function() {
+          element.formView = true;
+          TestHelpers.forceXIfStamp(element);
+          assert.equal(element.openedEditor, 1);
+          var node = Polymer.dom(element.root).querySelector('iron-pages > [opened]');
+          assert.equal(node.nodeName.toLowerCase(), 'form-data-editor');
+        });
       });
 
-      test('_computeHasMany() should compute false', function() {
-        assert.isFalse(element._computeHasMany(element.mimeTypes));
-      });
+      suite('FormData editor', function() {
+        setup(function() {
+          element = fixture('basic');
+          element.body = raml.resources[0].methods[0].body;
+          element.contentType = 'multipart/form-data';
+          TestHelpers.forceXIfStamp(element);
+        });
 
-      test('selectedType equals body', function() {
-        assert.deepEqual(element.selectedType, raml.body[0]);
-      });
+        test('selectedType equals body', function() {
+          assert.deepEqual(element.selectedType, raml.resources[0].methods[0].body[3]);
+        });
 
+        test('openedEditor equals 2', function() {
+          assert.equal(element.openedEditor, 2);
+        });
+
+        test('formView is set to false', function() {
+          assert.isFalse(element.formView);
+        });
+
+        test('formEditorDisabled is set to true', function() {
+          assert.isTrue(element.formEditorDisabled);
+        });
+      });
     });
     </script>
 

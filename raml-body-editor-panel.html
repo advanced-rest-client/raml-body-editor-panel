@@ -48,6 +48,7 @@ User can switch to the form view at any time using editor controls.
 Custom property | Description | Default
 ----------------|-------------|----------
 `--raml-body-editor-panel` | Mixin applied to the element | `{}`
+`--raml-body-editor-panel-content-actions` | Mixin applied to the content action container | `{}`
 
 Use `paper-tabs` and `code-mirror` variables to style this elements.
 
@@ -60,21 +61,13 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     <style>
      :host {
       display: block;
-
-      @apply(--raml-body-editor-panel);
-
-      --paper-tabs-content: {
-        overflow: auto;
-      }
+      @apply --raml-body-editor-panel;
     }
 
     .content-actions {
-      @apply(--layout-horizontal);
-      @apply(--layout-center);
-    }
-
-    .actions-divider {
-      @apply(--layout-flex);
+      @apply --layout-horizontal;
+      @apply --layout-center;
+      @apply --raml-body-editor-panel-content-actions;
     }
 
     paper-icon-button[active] {
@@ -88,7 +81,6 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       <paper-icon-button icon="arc:list" id="formButton" toggles active="{{formView}}" hidden$="[[formEditorDisabled]]"></paper-icon-button>
       <paper-tooltip for="copyButton">Copy current editor value to clipboard</paper-tooltip>
       <paper-tooltip for="formButton">Toggle form / source editor view</paper-tooltip>
-
       <template is="dom-if" if="[[_computeHasMany(mimeTypes)]]">
         <paper-dropdown-menu label="Select content type" no-label-float>
           <paper-listbox class="dropdown-content" attr-for-selected="data-mime" selected="{{contentType}}">
@@ -98,21 +90,12 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
           </paper-listbox>
         </paper-dropdown-menu>
       </template>
-
-      <span class="actions-divider"></span>
-
-      <paper-menu-button horizontal-align="right">
-        <paper-icon-button icon="arc:more-vert" class="dropdown-trigger"></paper-icon-button>
-        <paper-menu class="dropdown-content">
-          <paper-item on-tap="clearForm">Clear form</paper-item>
-        </paper-menu>
-      </paper-menu-button>
     </div>
     <iron-pages selected="{{openedEditor}}" selected-attribute="opened">
       <raw-payload-editor attr-for-opened="opened" value="{{value}}" content-type="[[contentType]]"></raw-payload-editor>
       <form-data-editor attr-for-opened="opened" narrow="[[narrow]]" value="{{value}}" raml-type="[[selectedType]]"></form-data-editor>
-      <multipart-payload-editor attr-for-opened="opened" value="{{value}}"></multipart-payload-editor>
-      <files-payload-editor attr-for-opened="opened" value="{{value}}"></files-payload-editor>
+      <multipart-payload-editor attr-for-opened="opened" value="{{value}}" raml-type="[[selectedType]]"></multipart-payload-editor>
+      <files-payload-editor attr-for-opened="opened" value="{{value}}" on-content-type-changed="_handleFileTypeChange"></files-payload-editor>
       <body-json-editor attr-for-opened="opened" narrow="[[narrow]]" value="{{value}}" raml-type="[[selectedType]]"></body-json-editor>
     </iron-pages>
     <clipboard-copy></clipboard-copy>
@@ -168,7 +151,8 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
        */
       contentType: {
         type: String,
-        notify: true
+        notify: true,
+        observer: '_contentTypeChanged'
       },
       /**
        * Body definition from the RAML file.
@@ -205,10 +189,6 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         type: String,
         computed: '_computeSelectedExample(selectedType.*)'
       },
-      // Internal value of the XML editor.
-      _valueForm: String,
-      // Internal value of the Form editor.
-      _valueXml: String,
       // if set it will display narrow (mobile) layout.
       narrow: {
         type: Boolean,
@@ -221,14 +201,15 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         type: Boolean,
         observer: '_formViewChanged'
       },
-
+      /**
+       * Computed value. If set then the "form editor" button is not rendered.
+       */
       formEditorDisabled: Boolean
     },
 
     observers: [
       '_valueChanged(value)',
-      '_updateBodyFromExample(selectedExample)',
-      '_contentTypeChanged(contentType)'
+      '_updateBodyFromExample(selectedExample)'
     ],
 
     attached: function() {
@@ -238,62 +219,95 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     detached: function() {
       this.unlisten(window, 'content-type-changed', '_ctHandler');
     },
-
-    ready: function() {
-      this._isReady = true;
-    },
     /**
-     * Function created for code mirror. Refreshes the editor value when window is resized
-     * to update the view.
-     * This sgould be called when the element become visible after being hidden.
+     * Function created for code mirror. Refreshes the editor value when window
+     * is resized to update the view.
+     * This should be called when the element become visible after being hidden.
      */
     notifyResize: function() {
-      // var cm = this.$$('code-mirror');
-      // if (!cm) {
-      //   return; //view not ready.
-      // }
-      // cm.editor.refresh();
-      console.warn('Fix me pls');
+      if (this.openedEditor !== 0) {
+        return;
+      }
+      var cm = this.$$('raw-payload-editor');
+      this.toggleAttribute('opened', false, cm);
+      Polymer.RenderStatus.afterNextRender(this, function() {
+        this.toggleAttribute('opened', true, cm);
+      });
     },
     /**
      * Updated list of available editors depending on a content type.
      */
     _contentTypeChanged: function(contentType) {
-      var value = this.value;
-      this.openedEditor = 0;
-      if (contentType.indexOf('multipart/form-data') === 0 || value instanceof FormData) {
-        this.formEditorDisabled = false;
+      var ramlType = this.selectedType;
+      if (!ramlType || !ramlType.type || ramlType.type !== 'file') {
+        if (this.value instanceof Blob) {
+          this.set('value', '');
+        }
+      }
+      this._setViewOpened(contentType, this.value, this.formView);
+    },
+    /**
+     * Sets up the view (enabled editors and selectors) depending on
+     * current settings.
+     */
+    _setViewOpened: function(contentType, value, formView) {
+      contentType = contentType || '';
+      value = value || '';
+      if (this.__isFormDataType(contentType)) {
+        this.formEditorDisabled = true;
+        this.openedEditor = 2;
         return;
       }
-      if (contentType === 'application/octet-stream' || value instanceof Blob) {
-        this.formEditorDisabled = false;
+      if (this.__isFileType(contentType, value, this.selectedType)) {
+        if (!(value instanceof Blob)) {
+          this.set('value', '');
+        }
+        this.formEditorDisabled = true;
+        this.openedEditor = 3;
         return;
+      }
+      if (value instanceof FormData) {
+        this.set('value', '');
+        this._updateBodyFromExample(this.selectedExample);
       }
       if (contentType.indexOf('json') !== -1) {
-        this.openedEditor = 0;
         this.formEditorDisabled = false;
+        this.openedEditor = formView ? 4 : 0;
         return;
       }
       if (contentType === 'application/x-www-form-urlencoded') {
         this.formEditorDisabled = false;
+        this.openedEditor = formView ? 1 : 0;
         return;
       }
       this.formEditorDisabled = true;
+      this.openedEditor = 0;
     },
+    /**
+     * Checks if current settings support File upload.
+     *
+     * @return {Boolean} True if current editor is File editor
+     */
+    __isFileType: function(contentType, value, ramlType) {
+      if (contentType === 'application/octet-stream') {
+        return true;
+      }
+      if (value instanceof Blob) {
+        return true;
+      }
 
-    _selectedChanged: function(newVal, oldVal) {
-      if (oldVal === undefined) {
-        // initialization
-        return;
+      if (ramlType && ramlType.type && ramlType.type === 'file') {
+        return true;
       }
-      if (newVal === 'code-mirror') {
-        console.warn('Fix me pls');
-        // this.$$('code-mirror').editor.refresh();
-      } else {
-        switch (newVal) {
-          case 'form': this.set('_valueForm', this.value); break;
-        }
-      }
+
+      return false;
+    },
+    /**
+     * Checks if current editor support FormData.
+     * @return {Boolean} True if current editor support FormData object
+     */
+    __isFormDataType: function(contentType) {
+      return contentType && contentType.indexOf('multipart/form-data') === 0;
     },
     /**
      * If currently selected editor is Form data editor then it will update
@@ -315,16 +329,13 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       this.fire('body-value-changed', {
         value: value
       });
-    },
-    // Cleaning of the variables when the body change
-    _cleanBodySettings: function() {
-      this._setMimeTypes(undefined);
+      this._setViewOpened(this.contentType, value, this.formView);
     },
     /**
      * Called when `body` array change to set up the `mimeTypes` array.
      */
     _bodyChanged: function(body) {
-      this._cleanBodySettings();
+      this._setMimeTypes(undefined);
       if (!body || !(body instanceof Array)) {
         return;
       }
@@ -393,42 +404,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       if (oldVal === undefined) {
         return;
       }
-      if (!formView) {
-        this.openedEditor = 0;
-        return;
-      }
-      var contentType = this.contentType;
-      var value = this.value;
-      if (contentType.indexOf('multipart/form-data') === 0 || value instanceof FormData) {
-        this.openedEditor = 2;
-        return;
-      }
-      if (contentType === 'application/octet-stream' || value instanceof Blob) {
-        this.openedEditor = 3;
-        return;
-      }
-      if (contentType.indexOf('json') !== -1) {
-        this.openedEditor = 4;
-        return;
-      }
-      if (contentType === 'application/x-www-form-urlencoded') {
-        this.openedEditor = 1;
-        return;
-      }
-      this.openedEditor = 0;
-    },
-
-    clearForm: function() {
-      switch (this.selected) {
-        case 'code-mirror':
-          console.warn('Fix me pls');
-          this.set('value', '');
-          // this.$$('code-mirror').editor.refresh();
-        break;
-        case 'json': this.set('_valueJson', ''); break;
-        case 'xml': this.set('_valueXml', ''); break;
-        case 'form': this.set('_valueForm', ''); break;
-      }
+      this._setViewOpened(this.contentType, this.value, formView);
     },
     // Computes an example for currently selected body
     _computeSelectedExample: function(record) {
@@ -448,11 +424,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       if (!newBody) {
         return;
       }
-      switch (this.selected) {
-        case 'form': this.set('_valueForm', newBody); break;
-        default:
-          this.set('value', newBody);
-      }
+      this.set('value', newBody);
     },
 
     /**
@@ -471,8 +443,17 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         this._resetCopyButtonState(button);
       }, 1000);
     },
+
     _resetCopyButtonState: function(button) {
       button.icon = 'arc:content-copy';
+    },
+    /**
+     * A handler for the content type change event from the file selector.
+     * The event is canceled and the content type is body's content type.
+     */
+    _handleFileTypeChange: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
   });
   </script>
