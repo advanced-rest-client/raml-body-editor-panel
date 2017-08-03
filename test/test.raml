@@ -1,6 +1,18 @@
 #%RAML 1.0
 title: My API with Types
 
+types:
+  File:
+    properties:
+      originalName:
+        type: string
+        description: Original file name.
+      created:
+        type: datetime
+        description: Original file creation time
+      file:
+        type: file
+        description: File content stored on the server.
 /people:
   post:
     body:
@@ -9,8 +21,48 @@ title: My API with Types
         type: object
         properties:
           name: string
-          value:
+          value?:
             type: string
             example: test
             default: test
         description: Test method with payload.
+        examples:
+          default-example:
+            name: test
+      application/xml:
+        displayName: Test XML
+        type: object
+        properties:
+          name: string
+          value?:
+            type: string
+            example: test
+            default: test
+      application/x-www-form-urlencoded:
+        displayName: Test URL encoded
+        type: object
+        properties:
+          name: string
+          value?:
+            type: string
+            example: test
+            default: test
+      multipart/form-data:
+        displayName: Test Form Data
+        type: object
+        properties:
+          name: string
+          value?:
+            type: string
+            example: test
+            default: test
+/file:
+  put:
+    body:
+      image/*:
+        type: file
+        fileTypes: ['image/*']
+  post:
+    body:
+      multipart/form-data:
+        type: File
