@@ -20,6 +20,7 @@ User can switch to the form view at any time using editor controls.
 Custom property | Description | Default
 ----------------|-------------|----------
 `--raml-body-editor-panel` | Mixin applied to the element | `{}`
+`--raml-body-editor-panel-content-actions` | Mixin applied to the content action container | `{}`
 
 Use `paper-tabs` and `code-mirror` variables to style this elements.
 
