@@ -23,11 +23,12 @@ the License.
 <link rel="import" href="../arc-icons/arc-icons.html">
 <link rel="import" href="../paper-tooltip/paper-tooltip.html">
 <link rel="import" href="../paper-menu-button/paper-menu-button.html">
-
-<link rel="import" href="../code-mirror/code-mirror.html">
+<link rel="import" href="../clipboard-copy/clipboard-copy.html">
 <link rel="import" href="../body-json-editor/body-json-editor.html">
-<link rel="import" href="../body-form-editor/body-form-editor.html">
-<link rel="import" href="../code-mirror-styles/cm-arc-styles.html">
+<link rel="import" href="../form-data-editor/form-data-editor.html">
+<link rel="import" href="../raw-payload-editor/raw-payload-editor.html">
+<link rel="import" href="../multipart-payload-editor/multipart-payload-editor.html">
+<link rel="import" href="../files-payload-editor/files-payload-editor.html">
 <!--
 `<raml-body-editor-panel>` A body editor panel containin JSON, XML and form editors.
 
@@ -47,6 +48,7 @@ User can switch to the form view at any time using editor controls.
 Custom property | Description | Default
 ----------------|-------------|----------
 `--raml-body-editor-panel` | Mixin applied to the element | `{}`
+`--raml-body-editor-panel-content-actions` | Mixin applied to the content action container | `{}`
 
 Use `paper-tabs` and `code-mirror` variables to style this elements.
 
@@ -59,33 +61,26 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     <style>
      :host {
       display: block;
-
-      @apply(--raml-body-editor-panel);
-
-      --paper-tabs-content: {
-        overflow: auto;
-      }
+      @apply --raml-body-editor-panel;
     }
 
     .content-actions {
-      @apply(--layout-horizontal);
-      @apply(--layout-center);
-    }
-
-    .actions-divider {
-      @apply(--layout-flex);
+      @apply --layout-horizontal;
+      @apply --layout-center;
+      @apply --raml-body-editor-panel-content-actions;
     }
 
     paper-icon-button[active] {
-      background-color: var(--raml-body-editor-panel-button-active, #BDBDBD);
+      background-color: var(--raml-body-editor-panel-button-active, #e0e0e0);
+      border-radius: 50%;
+      @apply(--raml-body-editor-panel-button-active);
     }
     </style>
     <div class="content-actions">
-      <paper-icon-button icon="arc:content-copy" id="copyButton"></paper-icon-button>
-      <paper-icon-button icon="arc:list" id="formButton" toggles active="{{formView}}"></paper-icon-button>
+      <paper-icon-button icon="arc:content-copy" id="copyButton" on-tap="_copyToClipboard"></paper-icon-button>
+      <paper-icon-button icon="arc:list" id="formButton" toggles active="{{formView}}" hidden$="[[formEditorDisabled]]"></paper-icon-button>
       <paper-tooltip for="copyButton">Copy current editor value to clipboard</paper-tooltip>
       <paper-tooltip for="formButton">Toggle form / source editor view</paper-tooltip>
-
       <template is="dom-if" if="[[_computeHasMany(mimeTypes)]]">
         <paper-dropdown-menu label="Select content type" no-label-float>
           <paper-listbox class="dropdown-content" attr-for-selected="data-mime" selected="{{contentType}}">
@@ -95,25 +90,15 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
           </paper-listbox>
         </paper-dropdown-menu>
       </template>
-
-      <span class="actions-divider"></span>
-
-      <paper-menu-button horizontal-align="right">
-        <paper-icon-button icon="arc:more-vert" class="dropdown-trigger"></paper-icon-button>
-        <paper-menu class="dropdown-content">
-          <paper-item on-tap="clearForm">Clear form</paper-item>
-          <!-- <paper-item on-tap="prePopulate">Pre populate from schema</paper-item> -->
-        </paper-menu>
-      </paper-menu-button>
     </div>
-    <iron-pages selected="{{selected}}" attr-for-selected="data-editor" selected-attribute="opened">
-      <div class="cm-tab-editor" data-editor="code-mirror">
-        <code-mirror opened mode="[[cmMode]]" value="{{_valueCodeMirror}}" theme="cm-arc"></code-mirror>
-      </div>
-      <body-json-editor data-editor="json" narrow="[[narrow]]" value="{{_valueJson}}" type="[[selectedType]]"></body-json-editor>
-      <body-form-editor data-editor="form" value="{{_valueForm}}" type="[[selectedType]]"></body-form-editor>
-      <!-- <body-xml-editor data-editor="xml" value="{{_valueXml}}" type="[[selectedType]]">XML</body-xml-editor> -->
+    <iron-pages selected="{{openedEditor}}" selected-attribute="opened">
+      <raw-payload-editor attr-for-opened="opened" value="{{value}}" content-type="[[contentType]]"></raw-payload-editor>
+      <form-data-editor attr-for-opened="opened" narrow="[[narrow]]" value="{{value}}" raml-type="[[selectedType]]"></form-data-editor>
+      <multipart-payload-editor attr-for-opened="opened" value="{{value}}" raml-type="[[selectedType]]"></multipart-payload-editor>
+      <files-payload-editor attr-for-opened="opened" value="{{value}}" on-content-type-changed="_handleFileTypeChange"></files-payload-editor>
+      <body-json-editor attr-for-opened="opened" narrow="[[narrow]]" value="{{value}}" raml-type="[[selectedType]]"></body-json-editor>
     </iron-pages>
+    <clipboard-copy></clipboard-copy>
   </template>
   <script>
   Polymer({
@@ -125,24 +110,29 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
      * @param {String} value Current editor value
      */
     properties: {
-      // Selected tab.
-      selected: {
-        type: String,
-        value: 'code-mirror',
-        observer: '_selectedChanged'
+      /**
+       * Currently selected editor.
+       *
+       * - 0 for Raw editor
+       * - 1 for Form data
+       * - 2 for Multipart
+       * - 3 for File
+       */
+      openedEditor: {
+        type: Number,
+        value: 0
       },
-      // Sets and gets the editor value.
+      /**
+       * A HTTP body.
+       *
+       * Depending of current editor selection the type can vary.
+       *
+       * @type {String|FormData|File}
+       */
       value: {
         type: String,
         value: '',
         notify: true
-      },
-      // Code mirror mode. See `<code-mirror>` docs for more information.
-      // This is computed from the content type property.
-      cmMode: {
-        type: String,
-        value: 'application/json',
-        computed: '_computeCmMode(contentType)'
       },
       /**
        * When set it will attempt to run associated code mirror mode.
@@ -161,13 +151,14 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
        */
       contentType: {
         type: String,
-        notify: true
+        notify: true,
+        observer: '_contentTypeChanged'
       },
       /**
        * Body definition from the RAML file.
-       * It should be array of the body types.
-       * It expects to have expanded types (so there's no sub-types). This can be done by using
-       * the `<raml-js-parser>` element which expands the types definition.
+       * It should be array of the body types. It expects to have expanded types
+       * (so there's no sub-types). This can be done by using the
+       * `<raml-js-parser>` element which expands the types definition.
        *
        * When set then the editor will show only forms for correstponding types that are available
        * for the method.
@@ -198,14 +189,6 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         type: String,
         computed: '_computeSelectedExample(selectedType.*)'
       },
-      // Internal value of the CodeMirror editor.
-      _valueCodeMirror: String,
-      // Internal value of the JSON editor.
-      _valueJson: String,
-      // Internal value of the XML editor.
-      _valueForm: String,
-      // Internal value of the Form editor.
-      _valueXml: String,
       // if set it will display narrow (mobile) layout.
       narrow: {
         type: Boolean,
@@ -217,16 +200,16 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       formView: {
         type: Boolean,
         observer: '_formViewChanged'
-      }
+      },
+      /**
+       * Computed value. If set then the "form editor" button is not rendered.
+       */
+      formEditorDisabled: Boolean
     },
 
     observers: [
       '_valueChanged(value)',
-      '_editorCodeMirrorChanged(selected, _valueCodeMirror)',
-      '_editorJsonChanged(selected, _valueJson)',
-      '_editorFormChanged(selected, _valueForm)',
-      '_editorXmlChanged(selected, _valueXml)',
-      '_upgateBodyFromExample(selectedExample)'
+      '_updateBodyFromExample(selectedExample)'
     ],
 
     attached: function() {
@@ -236,66 +219,96 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     detached: function() {
       this.unlisten(window, 'content-type-changed', '_ctHandler');
     },
-
-    ready: function() {
-      this._isReady = true;
-    },
     /**
-     * Function created for code mirror. Refreshes the editor value when window is resized
-     * to update the view.
-     * This sgould be called when the element become visible after being hidden.
+     * Function created for code mirror. Refreshes the editor value when window
+     * is resized to update the view.
+     * This should be called when the element become visible after being hidden.
      */
     notifyResize: function() {
-      var cm = this.$$('code-mirror');
-      if (!cm) {
-        return; //view not ready.
-      }
-      cm.editor.refresh();
-    },
-
-    _selectedChanged: function(newVal, oldVal) {
-      if (oldVal === undefined) {
-        // initialization
+      if (this.openedEditor !== 0) {
         return;
       }
-      if (newVal === 'code-mirror') {
-        switch (oldVal) {
-          case 'json': this.set('_valueCodeMirror', this._valueJson); break;
-          case 'xml': this.set('_valueCodeMirror', this._valueXml); break;
-          case 'form': this.set('_valueCodeMirror', this._valueForm); break;
-        }
-        this.$$('code-mirror').editor.refresh();
-      } else {
-        switch (newVal) {
-          case 'json': this.set('_valueJson', this._valueCodeMirror); break;
-          case 'xml': this.set('_valueXml', this._valueCodeMirror); break;
-          case 'form': this.set('_valueForm', this._valueCodeMirror); break;
+      var cm = this.$$('raw-payload-editor');
+      this.toggleAttribute('opened', false, cm);
+      Polymer.RenderStatus.afterNextRender(this, function() {
+        this.toggleAttribute('opened', true, cm);
+      });
+    },
+    /**
+     * Updated list of available editors depending on a content type.
+     */
+    _contentTypeChanged: function(contentType) {
+      var ramlType = this.selectedType;
+      if (!ramlType || !ramlType.type || ramlType.type !== 'file') {
+        if (this.value instanceof Blob) {
+          this.set('value', '');
         }
       }
+      this._setViewOpened(contentType, this.value, this.formView);
     },
-
     /**
-     * If currently selected editor is CodeMirror then it will update
-     * element's value to the same as in the editor.
+     * Sets up the view (enabled editors and selectors) depending on
+     * current settings.
      */
-    _editorCodeMirrorChanged: function(selected, value) {
-      if (selected !== 'code-mirror') {
+    _setViewOpened: function(contentType, value, formView) {
+      contentType = contentType || '';
+      value = value || '';
+      if (this.__isFormDataType(contentType)) {
+        this.formEditorDisabled = true;
+        this.openedEditor = 2;
         return;
       }
-      this.set('value', value);
-    },
-
-    /**
-     * If currently selected editor is JSON editor then it will update
-     * element's value to the same as in the editor.
-     */
-    _editorJsonChanged: function(selected, value) {
-      if (selected !== 'json') {
+      if (this.__isFileType(contentType, value, this.selectedType)) {
+        if (!(value instanceof Blob)) {
+          this.set('value', '');
+        }
+        this.formEditorDisabled = true;
+        this.openedEditor = 3;
         return;
       }
-      this.set('value', value);
+      if (value instanceof FormData) {
+        this.set('value', '');
+        this._updateBodyFromExample(this.selectedExample);
+      }
+      if (contentType.indexOf('json') !== -1) {
+        this.formEditorDisabled = false;
+        this.openedEditor = formView ? 4 : 0;
+        return;
+      }
+      if (contentType === 'application/x-www-form-urlencoded') {
+        this.formEditorDisabled = false;
+        this.openedEditor = formView ? 1 : 0;
+        return;
+      }
+      this.formEditorDisabled = true;
+      this.openedEditor = 0;
     },
+    /**
+     * Checks if current settings support File upload.
+     *
+     * @return {Boolean} True if current editor is File editor
+     */
+    __isFileType: function(contentType, value, ramlType) {
+      if (contentType === 'application/octet-stream') {
+        return true;
+      }
+      if (value instanceof Blob) {
+        return true;
+      }
 
+      if (ramlType && ramlType.type && ramlType.type === 'file') {
+        return true;
+      }
+
+      return false;
+    },
+    /**
+     * Checks if current editor support FormData.
+     * @return {Boolean} True if current editor support FormData object
+     */
+    __isFormDataType: function(contentType) {
+      return contentType && contentType.indexOf('multipart/form-data') === 0;
+    },
     /**
      * If currently selected editor is Form data editor then it will update
      * element's value to the same as in the editor.
@@ -307,40 +320,22 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       this.set('value', value);
     },
 
-    /**
-     * If currently selected editor is XML editor then it will update
-     * element's value to the same as in the editor.
-     */
-    _editorXmlChanged: function(selected, value) {
-      if (selected !== 'xml') {
-        return;
-      }
-      this.set('value', value);
-    },
-
     // Handler for content type changed event.
     _ctHandler: function(e) {
       this.set('contentType', e.detail.value);
-    },
-    // Computes to CodeMirror mode based on the content type.
-    _computeCmMode: function(contentType) {
-      return contentType;
     },
     // Fires the `body-value-changed` event when the value has changed.
     _valueChanged: function(value) {
       this.fire('body-value-changed', {
         value: value
       });
-    },
-    // Cleaning of the variables when the body change
-    _cleanBodySettings: function() {
-      this._setMimeTypes(undefined);
+      this._setViewOpened(this.contentType, value, this.formView);
     },
     /**
      * Called when `body` array change to set up the `mimeTypes` array.
      */
     _bodyChanged: function(body) {
-      this._cleanBodySettings();
+      this._setMimeTypes(undefined);
       if (!body || !(body instanceof Array)) {
         return;
       }
@@ -409,36 +404,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       if (oldVal === undefined) {
         return;
       }
-      if (formView) {
-        var ct = this.contentType;
-        var toEditor;
-        if (ct) {
-          if (ct.indexOf('json') !== -1) {
-            toEditor = 'json';
-          } else if (ct.indexOf('xml') !== -1) {
-            toEditor = 'xml';
-          } else if (ct.indexOf('form-urlencoded') !== -1) {
-            toEditor = 'form';
-          }
-        } else {
-          toEditor = 'json'; //falback to any...
-        }
-        this.set('selected', toEditor);
-      } else {
-        this.set('selected', 'code-mirror');
-      }
-    },
-
-    clearForm: function() {
-      switch (this.selected) {
-        case 'code-mirror':
-          this.set('_valueCodeMirror', '');
-          this.$$('code-mirror').editor.refresh();
-        break;
-        case 'json': this.set('_valueJson', ''); break;
-        case 'xml': this.set('_valueXml', ''); break;
-        case 'form': this.set('_valueForm', ''); break;
-      }
+      this._setViewOpened(this.contentType, this.value, formView);
     },
     // Computes an example for currently selected body
     _computeSelectedExample: function(record) {
@@ -454,19 +420,40 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       }
     },
     // Called when the example change
-    _upgateBodyFromExample: function(newBody) {
+    _updateBodyFromExample: function(newBody) {
       if (!newBody) {
         return;
       }
-      switch (this.selected) {
-        case 'code-mirror':
-          this.set('_valueCodeMirror', newBody);
-          this.$$('code-mirror').editor.refresh();
-        break;
-        case 'json': this.set('_valueJson', newBody); break;
-        case 'xml': this.set('_valueXml', newBody); break;
-        case 'form': this.set('_valueForm', newBody); break;
+      this.set('value', newBody);
+    },
+
+    /**
+     * Coppies current response text value to clipboard.
+     */
+    _copyToClipboard: function(e) {
+      var button = Polymer.dom(e).localTarget;
+      var copy = this.$$('clipboard-copy');
+      copy.content = this.value;
+      if (copy.copy()) {
+        button.icon = 'arc:done';
+      } else {
+        button.icon = 'arc:error';
       }
+      this.async(function() {
+        this._resetCopyButtonState(button);
+      }, 1000);
+    },
+
+    _resetCopyButtonState: function(button) {
+      button.icon = 'arc:content-copy';
+    },
+    /**
+     * A handler for the content type change event from the file selector.
+     * The event is canceled and the content type is body's content type.
+     */
+    _handleFileTypeChange: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
   });
   </script>
