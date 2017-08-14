@@ -120,7 +120,8 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
        */
       openedEditor: {
         type: Number,
-        value: 0
+        value: 0,
+        observer: '_openedEditorChanged'
       },
       /**
        * A HTTP body.
@@ -416,6 +417,12 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         return;
       }
       this._setViewOpened(this.contentType, this.value, formView);
+      this.fire('send-analytics', {
+        type: 'event',
+        category: 'raml-body-editor',
+        action: 'Toggle form view',
+        label: String(formView)
+      });
     },
     // Computes an example for currently selected body
     _computeSelectedExample: function(type) {
@@ -446,10 +453,20 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         button.icon = 'arc:done';
       } else {
         button.icon = 'arc:error';
+        this.fire('send-analytics', {
+          type: 'exception',
+          description: 'Copy to clipboard error - raml-body-editor',
+          fatal: false
+        });
       }
       this.async(function() {
         this._resetCopyButtonState(button);
       }, 1000);
+      this.fire('send-analytics', {
+        type: 'event',
+        category: 'raml-body-editor',
+        action: 'Copy to clipboard'
+      });
     },
 
     _resetCopyButtonState: function(button) {
@@ -462,6 +479,26 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     _handleFileTypeChange: function(e) {
       e.preventDefault();
       e.stopPropagation();
+    },
+
+    _openedEditorChanged: function(newValue, oldVal) {
+      if (oldVal === undefined) {
+        return;
+      }
+      var label;
+      switch (newValue) {
+        case 0: label = 'Raw data'; break;
+        case 1: label = 'URL form editor'; break;
+        case 2: label = 'Multipart body'; break;
+        case 3: label = 'Files editor'; break;
+        case 4: label = 'JSON editor'; break;
+      }
+      this.fire('send-analytics', {
+        type: 'event',
+        category: 'raml-body-editor',
+        action: 'Opened editor changed',
+        label: label
+      });
     }
   });
   </script>
