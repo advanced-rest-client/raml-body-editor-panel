@@ -61,6 +61,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <raml-demo-page raml="{{raml}}" selected-object="{{selected}}" is-method="{{isMethod}}" path="{{path}}">
       <paper-item data-url$="[[demoRaml]]">RAML 1.0 demo</paper-item>
       <paper-item data-url$="[[testCaseRaml]]">RAML 1.0 test case</paper-item>
+      <paper-item data-url$="[[issue515Raml]]">Issue 515</paper-item>
       <h1>The raml-body-editor-panel element</h1>
       <div main>
         <template is="dom-if" if="[[isMethod]]">
@@ -102,6 +103,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     var ramlRoot = location.protocol + '//' + location.host + path.replace('demo', 'test');
     scope.demoRaml = ramlRoot + 'demo.raml';
     scope.testCaseRaml = ramlRoot + 'test.raml';
+    scope.issue515Raml = ramlRoot + 'issue-515/api.raml';
   })(document.getElementById('app'));
   </script>
 </body>
