@@ -1,3 +1,18 @@
+<a name="0.3.3"></a>
+## [0.3.3](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.3.2...0.3.3) (2017-08-14)
+
+
+### Fix
+
+* Fixes https://github.com/mulesoft/api-console/issues/515 ([61243da636a6b67ad688fd2495e384df286ea337](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/61243da636a6b67ad688fd2495e384df286ea337))
+
+### New
+
+* Added GA events to track panel actions. ([50d2da6f65aab9b8a840547afe70a2a7cd7088da](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/50d2da6f65aab9b8a840547afe70a2a7cd7088da))
+* Added tests for https://github.com/mulesoft/api-console/issues/515 ([fa9b921cfcaca32956c3e66b1f933ab6e62813dc](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/fa9b921cfcaca32956c3e66b1f933ab6e62813dc))
+
+
+
 <a name="0.3.2"></a>
 ## [0.3.2](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.3.1...0.3.2) (2017-08-03)
 

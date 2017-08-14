@@ -1,0 +1,13 @@
+#%RAML 1.0 DataType
+description: The team is the basic unit for keeping track of a roster of players. With the Team APIs, you can obtain team-related information, like the team name, stats, points, and more.
+type: object
+properties:
+ name:
+   type: string
+   description: Name of the team
+ stadium: 
+   description: Name of the stadium
+   type: string
+example:
+  name: "Barcelona"
+  stadium: "Camp Nou" 

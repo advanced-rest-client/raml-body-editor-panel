@@ -1,0 +1,31 @@
+#%RAML 1.0 DataType
+type: object
+properties:
+  homeTeam:
+    description: Code of the home team
+    type: string
+    maxLength: 3
+    minLength: 3
+    required: true
+  awayTeam:
+    description: Code of the away team
+    type: string
+    maxLength: 3
+    minLength: 3
+    required: true
+  date:
+    description: The date on which the match will be played
+    type: datetime-only
+    required: true
+  homeTeamScore:
+    description: Number of goals scored by home team
+    type: integer
+  awayTeamScore:
+    description: Number of goals scored by home team
+    type: integer
+example:
+  homeTeam: BAR
+  awayTeam: RMA
+  date: "2014-01-12T20:00:00"
+  homeTeamScore: 2
+  awayTeamScore: 15
