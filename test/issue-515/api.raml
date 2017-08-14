@@ -1,0 +1,189 @@
+#%RAML 1.0
+---
+title: La Liga
+version: 2.0
+baseUri: http://localhost:8080/api
+documentation:
+  - title: Getting Started
+    content: |
+      This sample API has been created as part of your APIkit project. It is located in src/main/api. Feel free to poke around.
+      In order to have data available (Teams, fixture, positions) it is needed to perform POST request accordingly
+types:
+  team: !include schemas/team.raml
+  teamPatch: !include schemas/teamPatch.raml
+  teamMatch: !include schemas/teamMatch.raml
+      
+  position: !include schemas/position.raml
+  positionId: !include schemas/positionId.raml
+  
+  fixture: !include schemas/fix.raml
+  fixturePatch: !include schemas/fixture-patch.raml
+  fixtureId: !include schemas/fixtureId.raml
+
+/teams:
+  displayName: Teams
+  #description: |
+  #  A collection of teams that are participating in La Liga. Teams API allow you add, remove and retrieve individual team information from La Liga.
+  get:
+    description: Obtain information from a collection of teams simultaneously
+    queryParameters:
+      city:
+        description: |
+          Filter the list of teams by home city.
+        type: string
+        required: false
+        example: Barcelona
+    responses:
+      200:
+        body:
+          application/json:
+            type: team []
+            example: !include examples/team-array-example.raml
+  post:
+    description: Add a new team to the league
+    body:
+      application/json:
+        type: team
+        example: !include examples/team-object-example.raml
+    responses:
+      201:
+        description: |
+          The team has been succesfully created
+        headers:
+          Location:
+            type: string
+            description: Location of the newly created team
+      409:
+        description: |
+          The team already exists
+  /{teamId}:
+    displayName: Team
+    description: |
+      The team is the basic unit for keeping track of a roster of players that are participating together in La Liga. With the Team APIs, you can obtain team-related information, like the team name, stats, points, and more.
+    uriParameters:
+      teamId:
+        description: |
+          Three letter code that identifies the team.
+        type: string
+        minLength: 3
+        maxLength: 3
+        example: BAR
+    get:
+      description: Retrieve team-related information such as the name, the home city, the stadium, current position, and other statistical information about a team.
+      responses:
+        200:
+          body:
+            application/json:
+              type: teamMatch
+              example: !include examples/team-match-example.raml
+        404:
+          description: |
+            Unable to find a team with that identifier
+    patch:
+      description: Update team details such as the name of the home stadium, or the name of the team itself.
+      body:
+        application/json:
+           type: teamPatch
+           example: !include examples/team-patch-example.raml
+
+      responses:
+        204:
+          description: |
+            The team has been succesfully updated
+        404:
+          description: |
+            Unable to find a team with that identifier
+    delete:
+      description: Remove a team from the league. Notice that this operation is non-reversible and all data associated with the team, including its statistics will be lost. Use with caution.
+      responses:
+        204:
+          description: |
+            The resource has been succesfully removed.
+        404:
+          description: |
+            Unable to find a team with that identifier
+/positions:
+  displayName: Position Table
+  get:
+    description: Retrieve the current standing for the current season
+    responses:
+      200:
+        body:
+          application/json:
+            type: position []
+            example: !include examples/position-example.raml            
+  post:
+    description: Add a new position
+    body:
+      application/json:
+        type: positionId
+        example: !include examples/position-post-example.raml
+    responses:
+      201:
+        description: |
+      409:
+        description: |
+          The position already exists
+/fixture:
+  displayName: Fixture
+  #description: |
+  #  A collection of teams that are participating in La Liga. Teams API allow you add, remove and retrieve individual team information from La Liga.
+  get:
+    description: Retrieve a list of matches for the current season
+    responses:
+      200:
+        body:
+          application/json:
+            type: fixture []
+            example: !include examples/fixture-example.raml       
+  post:
+    description: Add a new fixture
+    body:
+      application/json:
+        type: fixtureId
+        example: !include examples/fixture-post-example.raml
+    responses:
+      201:
+        description: |
+          The fixture has been succesfully created
+        headers:
+          Location:
+            type: string
+            description: Location of the newly created position
+      409:
+        description: |
+          The fixture already exists
+  /{matchId}:
+    displayName: Match
+    uriParameters:
+      matchId:
+        description: Id of a match
+        type: integer
+        example: 2
+    get:
+      description: Retrieve details of a match.
+      responses:
+        200:
+          body:
+            application/json:
+              type: fixtureId []
+              example: !include examples/match-example.raml
+    patch:
+      description: Update a match result.
+      body:
+        application/json:
+          type: fixturePatch
+          example: |
+              {
+                "matchId":1,
+                "homeTeamScore": 3,
+                "awayTeamScore": 0
+              }
+      responses:
+        204:
+          description: |
+            The team has been succesfully updated
+        404:
+          description: |
+            Unable to find a team with that identifier
+      

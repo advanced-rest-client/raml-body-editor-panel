@@ -120,7 +120,8 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
        */
       openedEditor: {
         type: Number,
-        value: 0
+        value: 0,
+        observer: '_openedEditorChanged'
       },
       /**
        * A HTTP body.
@@ -182,12 +183,12 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
        */
       selectedType: {
         type: Object,
-        computed: '_computeSelectedType(contentType, body)'
+        readOnly: true
       },
       // Example from selected type to dispaly in the body panel on type change.
       selectedExample: {
         type: String,
-        computed: '_computeSelectedExample(selectedType.*)'
+        readOnly: true
       },
       // if set it will display narrow (mobile) layout.
       narrow: {
@@ -209,7 +210,9 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
 
     observers: [
       '_valueChanged(value)',
-      '_updateBodyFromExample(selectedExample)'
+      '_updateBodyFromExample(selectedExample)',
+      '_computeSelectedType(contentType, body)',
+      '_computeSelectedExample(selectedType)'
     ],
 
     attached: function() {
@@ -334,9 +337,17 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     /**
      * Called when `body` array change to set up the `mimeTypes` array.
      */
-    _bodyChanged: function(body) {
+    _bodyChanged: function(body, oldBody) {
+      // This can be set to undefined here without performance suffering
+      // since `undefined` will not trigger observers.
       this._setMimeTypes(undefined);
+      this._setSelectedType(undefined);
+      this._setSelectedExample(undefined);
+
       if (!body || !(body instanceof Array)) {
+        if (oldBody) {
+          this.set('value', '');
+        }
         return;
       }
       var mimes = body.map(function(item) {
@@ -375,14 +386,15 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       if (!mimeType || !body || !body.length) {
         return;
       }
-      return this._getBodyForMime(mimeType, body);
+      var type = this._getBodyForMime(mimeType, body);
+      this._setSelectedType(type);
     },
     /**
      * Returns a body definition object for given `mime`.
      *
      * @param {String} mime The mime type of the body.
      * @param {Array?} body The list of body definition. If not set then `this.body` will be used
-     * @param {Object|undefined} A body definition or undefined if not found.
+     * @return {Object|undefined} A body definition or undefined if not found.
      */
     _getBodyForMime: function(mime, body) {
       body = body || this.body;
@@ -405,19 +417,22 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         return;
       }
       this._setViewOpened(this.contentType, this.value, formView);
+      this.fire('send-analytics', {
+        type: 'event',
+        category: 'raml-body-editor',
+        action: 'Toggle form view',
+        label: String(formView)
+      });
     },
     // Computes an example for currently selected body
-    _computeSelectedExample: function(record) {
-      if (!record || !record.base) {
-        return;
+    _computeSelectedExample: function(type) {
+      var example;
+      if (type && type.example) {
+        example = type.example;
+      } else if (type && type.examples && type.examples.length) {
+        example = type.examples[0];
       }
-      var selectedType = record.base;
-      if (selectedType.example) {
-        return selectedType.example;
-      }
-      if (selectedType.examples && selectedType.examples.length) {
-        return selectedType.examples[0];
-      }
+      this._setSelectedExample(example);
     },
     // Called when the example change
     _updateBodyFromExample: function(newBody) {
@@ -438,10 +453,20 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         button.icon = 'arc:done';
       } else {
         button.icon = 'arc:error';
+        this.fire('send-analytics', {
+          type: 'exception',
+          description: 'Copy to clipboard error - raml-body-editor',
+          fatal: false
+        });
       }
       this.async(function() {
         this._resetCopyButtonState(button);
       }, 1000);
+      this.fire('send-analytics', {
+        type: 'event',
+        category: 'raml-body-editor',
+        action: 'Copy to clipboard'
+      });
     },
 
     _resetCopyButtonState: function(button) {
@@ -454,6 +479,26 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     _handleFileTypeChange: function(e) {
       e.preventDefault();
       e.stopPropagation();
+    },
+
+    _openedEditorChanged: function(newValue, oldVal) {
+      if (oldVal === undefined) {
+        return;
+      }
+      var label;
+      switch (newValue) {
+        case 0: label = 'Raw data'; break;
+        case 1: label = 'URL form editor'; break;
+        case 2: label = 'Multipart body'; break;
+        case 3: label = 'Files editor'; break;
+        case 4: label = 'JSON editor'; break;
+      }
+      this.fire('send-analytics', {
+        type: 'event',
+        category: 'raml-body-editor',
+        action: 'Opened editor changed',
+        label: label
+      });
     }
   });
   </script>

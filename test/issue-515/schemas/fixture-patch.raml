@@ -1,0 +1,16 @@
+#%RAML 1.0 DataType
+description: A match between two teams in the league
+type: object
+properties:
+  matchId:
+   type: integer
+  homeTeamScore:
+    description: Number of goals scored by home team
+    type: integer
+  awayTeamScore:
+    description: Number of goals scored by home team
+    type: integer
+example:
+ matchId: 1
+ homeTeamScore: 3
+ awayTeamScore: 0
