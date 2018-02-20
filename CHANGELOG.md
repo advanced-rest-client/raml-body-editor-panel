@@ -1,3 +1,13 @@
+<a name="0.4.1"></a>
+## [0.4.1](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.3.3...0.4.1) (2018-02-20)
+
+
+### Update
+
+* Updated tests configuration. ([4fe9b0baa11a45645e82a7341b8f1b0cc1b4dd7d](https://github.com/advanced-rest-client/raml-body-editor-panel/commit/4fe9b0baa11a45645e82a7341b8f1b0cc1b4dd7d))
+
+
+
 <a name="0.3.4"></a>
 ## [0.3.4](https://github.com/advanced-rest-client/raml-body-editor-panel/compare/0.3.3...0.3.4) (2017-08-14)
 
