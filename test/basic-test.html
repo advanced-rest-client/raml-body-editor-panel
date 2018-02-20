@@ -130,22 +130,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           assert.typeOf(element.selectedExample, 'string');
         });
 
-        test('formView is set to false', function() {
-          assert.isFalse(element.formView);
-        });
-
-        test('formEditorDisabled is set to false', function() {
-          assert.isFalse(element.formEditorDisabled);
-        });
-
-        test('Setting formView opens JSON form editor', function() {
-          element.formView = true;
-          TestHelpers.forceXIfStamp(element);
-          assert.equal(element.openedEditor, 4);
-          var node = Polymer.dom(element.root).querySelector('iron-pages > [opened]');
-          assert.equal(node.nodeName.toLowerCase(), 'body-json-editor');
-        });
-
         test('Value is computed from example', function() {
           assert.equal(element.value, '{\n  "name": "test"\n}');
         });
@@ -166,14 +150,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         test('openedEditor equals 0', function() {
           assert.equal(element.openedEditor, 0);
         });
-
-        test('formView is set to false', function() {
-          assert.isFalse(element.formView);
-        });
-
-        test('formEditorDisabled is set to true', function() {
-          assert.isTrue(element.formEditorDisabled);
-        });
       });
 
       suite('URL encoded data', function() {
@@ -188,24 +164,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           assert.deepEqual(element.selectedType, raml.resources[0].methods[0].body[2]);
         });
 
-        test('openedEditor equals 0', function() {
-          assert.equal(element.openedEditor, 0);
-        });
-
-        test('formView is set to false', function() {
-          assert.isFalse(element.formView);
-        });
-
-        test('formEditorDisabled is set to false', function() {
-          assert.isFalse(element.formEditorDisabled);
-        });
-
-        test('Setting formView opens form editor form editor', function() {
-          element.formView = true;
-          TestHelpers.forceXIfStamp(element);
+        test('openedEditor equals 1', function() {
           assert.equal(element.openedEditor, 1);
-          var node = Polymer.dom(element.root).querySelector('iron-pages > [opened]');
-          assert.equal(node.nodeName.toLowerCase(), 'form-data-editor');
         });
       });
 
@@ -223,14 +183,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         test('openedEditor equals 2', function() {
           assert.equal(element.openedEditor, 2);
-        });
-
-        test('formView is set to false', function() {
-          assert.isFalse(element.formView);
-        });
-
-        test('formEditorDisabled is set to true', function() {
-          assert.isTrue(element.formEditorDisabled);
         });
       });
     });

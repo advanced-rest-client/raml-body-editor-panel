@@ -24,7 +24,6 @@ the License.
 <link rel="import" href="../paper-tooltip/paper-tooltip.html">
 <link rel="import" href="../paper-menu-button/paper-menu-button.html">
 <link rel="import" href="../clipboard-copy/clipboard-copy.html">
-<link rel="import" href="../body-json-editor/body-json-editor.html">
 <link rel="import" href="../form-data-editor/form-data-editor.html">
 <link rel="import" href="../raw-payload-editor/raw-payload-editor.html">
 <link rel="import" href="../multipart-payload-editor/multipart-payload-editor.html">
@@ -78,9 +77,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     </style>
     <div class="content-actions">
       <paper-icon-button icon="arc:content-copy" id="copyButton" on-tap="_copyToClipboard"></paper-icon-button>
-      <paper-icon-button icon="arc:list" id="formButton" toggles active="{{formView}}" hidden$="[[formEditorDisabled]]"></paper-icon-button>
       <paper-tooltip for="copyButton">Copy current editor value to clipboard</paper-tooltip>
-      <paper-tooltip for="formButton">Toggle form / source editor view</paper-tooltip>
       <template is="dom-if" if="[[_computeHasMany(mimeTypes)]]">
         <paper-dropdown-menu label="Select content type" no-label-float>
           <paper-listbox class="dropdown-content" attr-for-selected="data-mime" selected="{{contentType}}">
@@ -96,7 +93,6 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       <form-data-editor attr-for-opened="opened" narrow="[[narrow]]" value="{{value}}" raml-type="[[selectedType]]"></form-data-editor>
       <multipart-payload-editor attr-for-opened="opened" value="{{value}}" raml-type="[[selectedType]]"></multipart-payload-editor>
       <files-payload-editor attr-for-opened="opened" value="{{value}}" on-content-type-changed="_handleFileTypeChange"></files-payload-editor>
-      <body-json-editor attr-for-opened="opened" narrow="[[narrow]]" value="{{value}}" raml-type="[[selectedType]]"></body-json-editor>
     </iron-pages>
     <clipboard-copy></clipboard-copy>
   </template>
@@ -194,18 +190,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       narrow: {
         type: Boolean,
         value: false
-      },
-      /**
-       * If set then the form editor instead of source editor will be displayed.
-       */
-      formView: {
-        type: Boolean,
-        observer: '_formViewChanged'
-      },
-      /**
-       * Computed value. If set then the "form editor" button is not rendered.
-       */
-      formEditorDisabled: Boolean
+      }
     },
 
     observers: [
@@ -247,17 +232,16 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
           this.set('value', '');
         }
       }
-      this._setViewOpened(contentType, this.value, this.formView);
+      this._setViewOpened(contentType, this.value);
     },
     /**
      * Sets up the view (enabled editors and selectors) depending on
      * current settings.
      */
-    _setViewOpened: function(contentType, value, formView) {
+    _setViewOpened: function(contentType, value) {
       contentType = contentType || '';
       value = value || '';
       if (this.__isFormDataType(contentType)) {
-        this.formEditorDisabled = true;
         this.openedEditor = 2;
         return;
       }
@@ -265,25 +249,23 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         if (!(value instanceof Blob)) {
           this.set('value', '');
         }
-        this.formEditorDisabled = true;
         this.openedEditor = 3;
         return;
       }
       if (value instanceof FormData) {
         this.set('value', '');
         this._updateBodyFromExample(this.selectedExample);
+        this.openedEditor = 2;
+        return;
       }
       if (contentType.indexOf('json') !== -1) {
-        this.formEditorDisabled = false;
-        this.openedEditor = formView ? 4 : 0;
+        this.openedEditor = 0;
         return;
       }
       if (contentType === 'application/x-www-form-urlencoded') {
-        this.formEditorDisabled = false;
-        this.openedEditor = formView ? 1 : 0;
+        this.openedEditor = 1;
         return;
       }
-      this.formEditorDisabled = true;
       this.openedEditor = 0;
     },
     /**
@@ -298,7 +280,6 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       if (value instanceof Blob) {
         return true;
       }
-
       if (ramlType && ramlType.type && ramlType.type === 'file') {
         return true;
       }
@@ -312,16 +293,6 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
     __isFormDataType: function(contentType) {
       return contentType && contentType.indexOf('multipart/form-data') === 0;
     },
-    /**
-     * If currently selected editor is Form data editor then it will update
-     * element's value to the same as in the editor.
-     */
-    _editorFormChanged: function(selected, value) {
-      if (selected !== 'form') {
-        return;
-      }
-      this.set('value', value);
-    },
 
     // Handler for content type changed event.
     _ctHandler: function(e) {
@@ -332,7 +303,7 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
       this.fire('body-value-changed', {
         value: value
       });
-      this._setViewOpened(this.contentType, value, this.formView);
+      this._setViewOpened(this.contentType, value);
     },
     /**
      * Called when `body` array change to set up the `mimeTypes` array.
@@ -408,22 +379,6 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         }
       }
     },
-    /**
-     * Toggles the editor view between source editor (code mirror) and dedicated
-     * form editors for JSON, XML and form data.
-     */
-    _formViewChanged: function(formView, oldVal) {
-      if (oldVal === undefined) {
-        return;
-      }
-      this._setViewOpened(this.contentType, this.value, formView);
-      this.fire('send-analytics', {
-        type: 'event',
-        category: 'raml-body-editor',
-        action: 'Toggle form view',
-        label: String(formView)
-      });
-    },
     // Computes an example for currently selected body
     _computeSelectedExample: function(type) {
       var example;
@@ -491,7 +446,6 @@ Use `paper-tabs` and `code-mirror` variables to style this elements.
         case 1: label = 'URL form editor'; break;
         case 2: label = 'Multipart body'; break;
         case 3: label = 'Files editor'; break;
-        case 4: label = 'JSON editor'; break;
       }
       this.fire('send-analytics', {
         type: 'event',

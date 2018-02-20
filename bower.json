@@ -51,7 +51,7 @@
     "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
     "arc-demo-helpers": "advanced-rest-client/arc-demo-helpers#^1.0.4",
     "raml-js-parser": "advanced-rest-client/raml-js-parser#^2.0.0",
-    "raml-json-enhance": "advanced-rest-client/raml-json-enhance#^0.2.0",
+    "raml-json-enhance": "advanced-rest-client/raml-json-enhance#^0.3.0",
     "arc-polyfills": "advanced-rest-client/arc-polyfills#^0.1.8"
   },
   "ignore": [
@@ -62,5 +62,5 @@
     "test",
     "tasks"
   ],
-  "version": "0.3.4"
+  "version": "0.4.1"
 }
